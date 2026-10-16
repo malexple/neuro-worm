@@ -20,4 +20,20 @@ test {
     useJUnitPlatform()
 }
 
+tasks.register('runPlasticity', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PlasticityEvolution'
+}
+
+tasks.register('runAblation', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PlasticityAblation'
+}
+
+tasks.register('runPlasticityOdorOnly', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PlasticityEvolution'
+    systemProperty 'fixD0', 'true'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

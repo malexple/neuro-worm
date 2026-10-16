@@ -41,6 +41,8 @@ public final class Neuron {
     public double maxOffset = 3.0;
     public double thresholdOffset;
     double rateHz = 3;                        // EMA частоты, стартует с targetHz
+    boolean spiked;
+    public boolean spikedLastTick() { return spiked; }
 
     Neuron(int index, String name, NeuronType type, Neurotransmitter transmitter) {
         this.index = index;

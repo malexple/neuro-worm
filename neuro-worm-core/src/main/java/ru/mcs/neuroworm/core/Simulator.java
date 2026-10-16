@@ -18,6 +18,8 @@ public final class Simulator {
     private final double[] modulators = new double[Modulator.values().length];
     private SpikeListener listener = (t, i) -> { };
     private int tick;
+    private Runnable tickListener = () -> { };
+    public void setTickListener(Runnable r) { this.tickListener = r; }
 
     public Simulator(Network net, long seed) {
         this.net = net;
@@ -77,6 +79,7 @@ public final class Simulator {
                 listener.onSpike(tick, n.index);
             }
             n.v = v;
+            n.spiked = spiked;
             if (n.homeostasisEta > 0) {
                 n.rateHz += ((spiked ? 1000.0 : 0.0) - n.rateHz) / n.homeostasisRateTau;
                 double o = n.thresholdOffset + n.homeostasisEta * (n.rateHz - n.targetHz);
@@ -85,6 +88,7 @@ public final class Simulator {
         }
 
         for (int k = 0; k < modulators.length; k++) modulators[k] *= MODULATOR_DECAY;
+        tickListener.run();
         tick++;
     }
 }

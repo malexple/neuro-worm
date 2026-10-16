@@ -30,6 +30,9 @@ public final class Worm {
     private final long[] lastCounts;
     private double fwdHz, backHz, dorHz, venHz;
     private double prevL = Double.NaN, prevR = Double.NaN, dcL, dcR;
+    private double dcBase;
+    public double dcMean() { return 0.5 * (dcL + dcR); }
+    public double dcBaseline() { return dcBase; }
 
     public Worm(Arena arena, Network net, double x, double y, double heading) {
         this.arena = arena;
@@ -92,6 +95,7 @@ public final class Worm {
         if (Double.isNaN(prevL)) { prevL = left; prevR = right; }
         dcL += cfg.derivAlpha * ((left - prevL) / dtSec - dcL);
         dcR += cfg.derivAlpha * ((right - prevR) / dtSec - dcR);
+        dcBase += 0.001 * (0.5 * (dcL + dcR) - dcBase);
         prevL = left;
         prevR = right;
         awaL.stimulusHz = cfg.odorGainHz * left + cfg.awaDerivGain * Math.max(0, dcL);
