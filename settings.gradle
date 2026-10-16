@@ -1,3 +1,4 @@
 rootProject.name = 'neuro-worm'
 include 'neuro-worm-core'
+include 'neuro-worm-world'
 

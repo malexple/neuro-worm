@@ -26,6 +26,9 @@ public final class ConnectomeLoader {
 
     private static final System.Logger LOG = System.getLogger(ConnectomeLoader.class.getName());
 
+    private static final java.util.concurrent.atomic.AtomicBoolean WARNED =
+            new java.util.concurrent.atomic.AtomicBoolean();
+
     private ConnectomeLoader() { }
 
     public static LoadResult load(Reader types, Reader connectome, double chemicalK, double gapK)
@@ -55,10 +58,10 @@ public final class ConnectomeLoader {
             }
             net.addNeuron(name, classes.getOrDefault(name, NeuronType.INTER), t);
         }
-        if (!inferred.isEmpty()) {
+        if (!inferred.isEmpty() && WARNED.compareAndSet(false, true)) {
             LOG.log(System.Logger.Level.WARNING,
-                    "Neurotransmitter not defined for {0} neurons, assumed GLU (inferred): {1}",
-                    inferred.size(), inferred);
+                    "Neurotransmitter not defined for {0} neurons, assumed GLU (see Report.inferred)",
+                    inferred.size());
         }
 
         int chemical = 0;
