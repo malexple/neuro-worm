@@ -11,6 +11,7 @@ public final class Arena {
     public final double size;
     public final List<Source> food = new ArrayList<>();
     public final List<Zone> painZones = new ArrayList<>();
+    public final List<Source> salt = new ArrayList<>();
 
     public Arena(double size) { this.size = size; }
 
@@ -39,5 +40,11 @@ public final class Arena {
     public double pain(double x, double y) {
         for (Zone z : painZones) if (distance(x, y, z.x(), z.y()) <= z.radius()) return 1;
         return 0;
+    }
+
+    public double salt(double x, double y) {
+        double c = 0;
+        for (Source s : salt) c += s.amplitude() * Math.exp(-distance(x, y, s.x(), s.y()) / s.lambda());
+        return c;
     }
 }

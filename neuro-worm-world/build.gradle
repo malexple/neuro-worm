@@ -36,4 +36,19 @@ tasks.register('runPlasticityOdorOnly', JavaExec) {
     systemProperty 'fixD0', 'true'
 }
 
+tasks.register('runControl', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PlasticityControl'
+}
+
+tasks.register('runConditioning', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.ConditioningEvolution'
+}
+
+tasks.register('runConditioningControls', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.ConditioningControls'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

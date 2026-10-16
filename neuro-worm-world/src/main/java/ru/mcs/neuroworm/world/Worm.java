@@ -18,6 +18,10 @@ public final class Worm {
         public double awcOffGain = 0;     // Гц на единицу концентрации в секунду (падение запаха)
         public double awcTonicHz = 0;     // тоническая активность AWC без запаха
         public double derivAlpha = 0.1;   // сглаживание производной
+        public double aseConcGain = 0;   // Гц на единицу концентрации соли
+        public double aseOnGain = 0;     // ASEL: Гц на единицу/с роста
+        public double aseOffGain = 0;    // ASER: Гц на единицу/с падения
+        public double aseTonicHz = 0;
     }
 
     public final Config cfg = new Config();
@@ -33,6 +37,10 @@ public final class Worm {
     private double dcBase;
     public double dcMean() { return 0.5 * (dcL + dcR); }
     public double dcBaseline() { return dcBase; }
+    private double prevSL = Double.NaN, prevSR = Double.NaN, dcSL, dcSR;
+    /** NaN: чувствовать поле соли в арене; число: подать постоянный уровень CS (обучение). */
+    public double csOverride = Double.NaN;
+    private final Neuron aseL, aseR;
 
     public Worm(Arena arena, Network net, double x, double y, double heading) {
         this.arena = arena;
@@ -47,6 +55,8 @@ public final class Worm {
         awaL = net.get("AWAL");
         awcL = net.get("AWCL");
         awcR = net.get("AWCR");
+        aseL = net.get("ASEL");
+        aseR = net.get("ASER");
         awaR = net.get("AWAR");
         ashL = net.get("ASHL");
         ashR = net.get("ASHR");
@@ -90,8 +100,9 @@ public final class Worm {
 
     void sense(double dtSec) {
         double nx = -Math.sin(heading), ny = Math.cos(heading);
-        double left = arena.odor(x + cfg.sensorOffset * nx, y + cfg.sensorOffset * ny);
-        double right = arena.odor(x - cfg.sensorOffset * nx, y - cfg.sensorOffset * ny);
+        double lx = x + cfg.sensorOffset * nx, ly = y + cfg.sensorOffset * ny;
+        double rx = x - cfg.sensorOffset * nx, ry = y - cfg.sensorOffset * ny;
+        double left = arena.odor(lx, ly), right = arena.odor(rx, ry);
         if (Double.isNaN(prevL)) { prevL = left; prevR = right; }
         dcL += cfg.derivAlpha * ((left - prevL) / dtSec - dcL);
         dcR += cfg.derivAlpha * ((right - prevR) / dtSec - dcR);
@@ -102,6 +113,25 @@ public final class Worm {
         awaR.stimulusHz = cfg.odorGainHz * right + cfg.awaDerivGain * Math.max(0, dcR);
         awcL.stimulusHz = cfg.awcTonicHz + cfg.awcOffGain * Math.max(0, -dcL);
         awcR.stimulusHz = cfg.awcTonicHz + cfg.awcOffGain * Math.max(0, -dcR);
+
+        if (aseL != null) {
+            boolean cs = !Double.isNaN(csOverride);
+            double sl = cs ? csOverride : arena.salt(lx, ly);
+            double sr = cs ? csOverride : arena.salt(rx, ry);
+            if (cs || Double.isNaN(prevSL)) { prevSL = sl; prevSR = sr; }
+            if (cs) {
+                dcSL = 0;
+                dcSR = 0;
+            } else {
+                dcSL += cfg.derivAlpha * ((sl - prevSL) / dtSec - dcSL);
+                dcSR += cfg.derivAlpha * ((sr - prevSR) / dtSec - dcSR);
+                prevSL = sl;
+                prevSR = sr;
+            }
+            aseL.stimulusHz = cfg.aseTonicHz + cfg.aseConcGain * sl + cfg.aseOnGain * Math.max(0, dcSL);
+            aseR.stimulusHz = cfg.aseTonicHz + cfg.aseConcGain * sr + cfg.aseOffGain * Math.max(0, -dcSR);
+        }
+
         double pain = cfg.painGainHz * arena.pain(x, y);
         ashL.stimulusHz = pain;
         ashR.stimulusHz = pain;

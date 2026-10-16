@@ -19,6 +19,7 @@ public final class PlasticityEvolution {
     static final double[] BASE = {390.283, 945.166, 1663.948, 3.553, 0.011, 0.033, 0.263, 6.488, 1.03};
     static final int GENES = 6, TRAIN = 4, EVAL = 4;
     static final boolean FIX_D0 = Boolean.getBoolean("fixD0");
+    static volatile int rewardDelay = 0;
 
     static double[] crippled() {
         double[] g = BASE.clone();
@@ -69,10 +70,12 @@ public final class PlasticityEvolution {
 
         double sum = 0;
         int cnt = 0;
+        double[] ring = new double[rewardDelay + 1];
         for (int i = 0; i < 2000; i++) {
             if (pm != null && learn) {
                 double d = rule.d0() + rule.kappa() * (w.dcMean() - rule.blend() * w.dcBaseline());
-                pm.reward = Math.max(-1, Math.min(1, d));
+                ring[i % ring.length] = Math.max(-1, Math.min(1, d));
+                pm.reward = ring[(i + 1) % ring.length];
             }
             world.step();
             if (i >= 1500) {
