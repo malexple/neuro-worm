@@ -60,10 +60,13 @@ public final class Simulator {
             double rate = (n.baselineHz + n.stimulusHz) * DT_SECONDS;
             if (rng.nextDouble() < rate) v += n.kick;
 
+            boolean spiked = false;
+
             if (n.refractory > 0) {
                 n.refractory--;
                 v = n.vReset;
             } else if (v >= n.effectiveThreshold(stress)) {
+                spiked = true;
                 v = n.vReset;
                 n.refractory = n.refractoryTicks;
                 n.fatigue += n.fatigueInc;
@@ -74,6 +77,11 @@ public final class Simulator {
                 listener.onSpike(tick, n.index);
             }
             n.v = v;
+            if (n.homeostasisEta > 0) {
+                n.rateHz += ((spiked ? 1000.0 : 0.0) - n.rateHz) / n.homeostasisRateTau;
+                double o = n.thresholdOffset + n.homeostasisEta * (n.rateHz - n.targetHz);
+                n.thresholdOffset = Math.max(n.minOffset, Math.min(n.maxOffset, o));
+            }
         }
 
         for (int k = 0; k < modulators.length; k++) modulators[k] *= MODULATOR_DECAY;

@@ -1,6 +1,7 @@
 package ru.mcs.neuroworm.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class Neuron {
@@ -33,6 +34,14 @@ public final class Neuron {
     final List<Synapse> out = new ArrayList<>();
     final List<GapLink> gaps = new ArrayList<>();
 
+    public double homeostasisEta = 0;         // 0 = гомеостаз выключен
+    public double targetHz = 3;
+    public double homeostasisRateTau = 1000;  // в тиках
+    public double minOffset = -0.6;
+    public double maxOffset = 3.0;
+    public double thresholdOffset;
+    double rateHz = 3;                        // EMA частоты, стартует с targetHz
+
     Neuron(int index, String name, NeuronType type, Neurotransmitter transmitter) {
         this.index = index;
         this.name = name;
@@ -42,11 +51,14 @@ public final class Neuron {
 
     public double effectiveThreshold(double stress) {
         double s = Math.max(0, Math.min(1, stress));
-        return threshold * (1 - stressSensitivity * s) + fatigue;
+        return threshold * (1 - stressSensitivity * s) + fatigue + thresholdOffset;
     }
 
     public double v() { return v; }
     public void setV(double v) { this.v = v; }
     public double fatigue() { return fatigue; }
     public long spikeCount() { return spikeCount; }
+
+    public List<Synapse> synapses() { return Collections.unmodifiableList(out); }
+    public List<GapLink> gapLinks() { return Collections.unmodifiableList(gaps); }
 }
