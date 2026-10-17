@@ -20,7 +20,6 @@ public final class ConditioningEvolution {
                 double eta, double tauElig, double aMinus, double rewardGain) { }
 
     static final String ASE = "^ASE[LR]$";
-    static final double[] BASE = PlasticityEvolution.BASE;
     static final double CS_LEVEL = 0.5;
     static final double[] SALT = {140, 100};
     static final int GENES = 9, TRAIN = 3, EVAL = 3, CYCLE = 600;
@@ -36,10 +35,11 @@ public final class ConditioningEvolution {
     static final class Learner { volatile double[][] scales; }
 
     static double episode(Cond cd, double[] off, long seed, Learner learner, Mode mode) {
+        double[] g = PlasticityEvolution.baseGenome();
         Network net = Evolution.newNetwork();
         for (Neuron n : net.neurons()) n.thresholdOffset = off[n.index];
-        Evolution.scale(net, Evolution.SENS, Evolution.INTER, BASE[7]);
-        Evolution.scale(net, Evolution.INTER, Evolution.HEAD, BASE[8]);
+        Evolution.scale(net, Evolution.SENS, Evolution.INTER, g[7]);
+        Evolution.scale(net, Evolution.INTER, Evolution.HEAD, g[8]);
         Evolution.scale(net, ASE, Evolution.INTER, cd.sAse());
 
         PlasticityManager pm = new PlasticityManager(net, ASE, Evolution.INTER);
@@ -57,9 +57,9 @@ public final class ConditioningEvolution {
         SplittableRandom r = new SplittableRandom(seed);
         Worm w = new Worm(arena, net, 80, 100, r.nextDouble() * 2 * Math.PI);
         w.cfg.odorGainHz = 0;
-        w.cfg.speedGain = BASE[4];
-        w.cfg.turnGain = BASE[5];
-        w.cfg.baseSpeed = BASE[6];
+        w.cfg.speedGain = g[4];
+        w.cfg.turnGain = g[5];
+        w.cfg.baseSpeed = g[6];
         w.cfg.aseConcGain = cd.aseConc();
         w.cfg.aseOnGain = cd.aseOn();
         w.cfg.aseOffGain = cd.aseOff();
@@ -158,6 +158,12 @@ public final class ConditioningEvolution {
 
         Cond cd = decode(best);
         double naive = test(cd, off, new Learner(), 300_000, 20);
+        Cond deaf = new Cond(0, 0, 0, 0, cd.sAse(), cd.eta(), cd.tauElig(), cd.aMinus(), cd.rewardGain());
+        double blind = test(deaf, off, new Learner(), 300_000, 20);
+        System.out.printf("chance level (blind) %.1f%n", blind);
+        System.out.println("COND new ConditioningEvolution.Cond(" + cd.aseConc() + ", " + cd.aseOn() + ", "
+                + cd.aseOff() + ", " + cd.aseTonic() + ", " + cd.sAse() + ", " + cd.eta() + ", "
+                + cd.tauElig() + ", " + cd.aMinus() + ", " + cd.rewardGain() + ")");
         double paired = test(cd, off, train(cd, off, 200_000, Mode.PAIRED), 300_000, 20);
         double unpaired = test(cd, off, train(cd, off, 210_000, Mode.UNPAIRED), 300_000, 20);
         double usOnly = test(cd, off, train(cd, off, 220_000, Mode.US_ONLY), 300_000, 20);
