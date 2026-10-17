@@ -42,6 +42,8 @@ public final class Neuron {
     public double thresholdOffset;
     double rateHz = 3;                        // EMA частоты, стартует с targetHz
     boolean spiked;
+    public volatile boolean lesioned;
+
     public boolean spikedLastTick() { return spiked; }
 
     Neuron(int index, String name, NeuronType type, Neurotransmitter transmitter) {

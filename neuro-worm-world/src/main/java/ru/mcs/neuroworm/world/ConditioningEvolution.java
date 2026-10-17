@@ -164,4 +164,9 @@ public final class ConditioningEvolution {
         System.out.printf("FINAL 20 fresh seeds: naive %.1f | paired %.1f | unpaired %.1f | US only %.1f%n",
                 naive, paired, unpaired, usOnly);
     }
+
+    static double[] testValues(Cond cd, double[] off, Learner l, long seed0, int n) {
+        return IntStream.range(0, n).parallel()
+                .mapToDouble(k -> episode(cd, off, seed0 + k, l, Mode.TEST)).toArray();
+    }
 }

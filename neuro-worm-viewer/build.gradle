@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+group = 'ru.mcs'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    version = '21.0.5'
+    modules = ['javafx.controls']
+}
+
+dependencies {
+    implementation project(':neuro-worm-core')
+    implementation project(':neuro-worm-world')
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application { mainClass = 'ru.mcs.neuroworm.viewer.ViewerApp' }

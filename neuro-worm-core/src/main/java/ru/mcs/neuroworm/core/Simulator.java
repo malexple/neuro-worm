@@ -52,8 +52,17 @@ public final class Simulator {
         for (Neuron n : neurons) vPrev[n.index] = n.v;
 
         for (Neuron n : neurons) {
+            if (n.lesioned) {
+                n.v = n.vReset;
+                n.spiked = false;
+                in[n.index] = 0;
+                continue;
+            }
             double gapCurrent = 0;
-            for (GapLink g : n.gaps) gapCurrent += g.conductance() * (vPrev[g.other()] - vPrev[n.index]);
+            for (GapLink g : n.gaps) {
+                if (neurons.get(g.other()).lesioned) continue;
+                gapCurrent += g.conductance() * (vPrev[g.other()] - vPrev[n.index]);
+            }
 
             n.fatigue -= n.fatigue / n.fatigueTau;
             double v = n.v + (n.vRest - n.v) / n.tau + in[n.index] + gapCurrent;

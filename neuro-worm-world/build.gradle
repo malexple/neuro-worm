@@ -51,4 +51,9 @@ tasks.register('runConditioningControls', JavaExec) {
     mainClass = 'ru.mcs.neuroworm.world.ConditioningControls'
 }
 
+tasks.register('runConditioningStats', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.ConditioningStats'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }
