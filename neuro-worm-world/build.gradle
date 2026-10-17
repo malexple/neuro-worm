@@ -73,4 +73,14 @@ tasks.register('runAblationScanSigned', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runFeedingCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.FeedingCheck'
+}
+tasks.register('runFeedingCheckSigned', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.FeedingCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

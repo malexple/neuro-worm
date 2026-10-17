@@ -62,4 +62,29 @@ class WorldTest {
         w.sense();
         assertTrue(net.get("AWAL").stimulusHz > net.get("AWAR").stimulusHz);
     }
+
+    @Test
+    void wormStopsAtFood() {
+        Arena a = new Arena(200);
+        a.food.add(new Arena.Source(100.05, 100, 1.0, 40));
+        Worm w = new Worm(a, miniNet(), 100, 100, 0);
+        w.cfg.feedRadius = 3;
+        w.drive(5, 0, 0, 0);
+        assertTrue(w.feeding());
+        double x1 = w.x;
+        w.drive(5, 0, 0, 0);
+        assertEquals(x1, w.x, 0.0);
+    }
+
+    @Test
+    void feedingIsOffByDefault() {
+        Arena a = new Arena(200);
+        a.food.add(new Arena.Source(100.05, 100, 1.0, 40));
+        Worm w = new Worm(a, miniNet(), 100, 100, 0);
+        w.drive(5, 0, 0, 0);
+        double x1 = w.x;
+        w.drive(5, 0, 0, 0);
+        assertTrue(w.x > x1);
+        assertTrue(!w.feeding());
+    }
 }

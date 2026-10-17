@@ -43,6 +43,7 @@ public final class ChemotaxisScenario {
         worm.cfg.speedGain = g[4];
         worm.cfg.turnGain = g[5];
         worm.cfg.baseSpeed = g[6];
+        worm.cfg.feedRadius = 3.0;
         world = new World(arena, worm, sim);
     }
 

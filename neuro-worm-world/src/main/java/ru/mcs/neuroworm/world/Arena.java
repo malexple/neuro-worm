@@ -47,4 +47,11 @@ public final class Arena {
         for (Source s : salt) c += s.amplitude() * Math.exp(-distance(x, y, s.x(), s.y()) / s.lambda());
         return c;
     }
+
+    /** Расстояние до ближайшей еды (бесконечность, если еды нет). */
+    public double foodDistance(double x, double y) {
+        double best = Double.POSITIVE_INFINITY;
+        for (Source s : food) best = Math.min(best, distance(x, y, s.x(), s.y()));
+        return best;
+    }
 }

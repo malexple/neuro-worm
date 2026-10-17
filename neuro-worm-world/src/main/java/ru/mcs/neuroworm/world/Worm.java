@@ -22,6 +22,7 @@ public final class Worm {
         public double aseOnGain = 0;     // ASEL: Гц на единицу/с роста
         public double aseOffGain = 0;    // ASER: Гц на единицу/с падения
         public double aseTonicHz = 0;
+        public double feedRadius = 0;   // 0 = питание выключено
     }
 
     public final Config cfg = new Config();
@@ -41,6 +42,12 @@ public final class Worm {
     /** NaN: чувствовать поле соли в арене; число: подать постоянный уровень CS (обучение). */
     public double csOverride = Double.NaN;
     private final Neuron aseL, aseR;
+    private boolean feeding;
+    private int steps;
+    private int contactStep = -1;
+
+    public boolean feeding() { return feeding; }
+    public int contactStep() { return contactStep; }
 
     public Worm(Arena arena, Network net, double x, double y, double heading) {
         this.arena = arena;
@@ -79,6 +86,7 @@ public final class Worm {
 
     /** Вызывается после каждых `ticks` тиков симуляции. */
     public void update(int ticks) {
+        steps++;
         double f = poolHz(fwd, ticks), b = poolHz(back, ticks), d = poolHz(dor, ticks), v = poolHz(ven, ticks);
         for (Neuron n : net.neurons()) lastCounts[n.index] = n.spikeCount();
         fwdHz += cfg.emaAlpha * (f - fwdHz);
@@ -90,10 +98,15 @@ public final class Worm {
     }
 
     void drive(double fwdHz, double backHz, double dorHz, double venHz) {
+        if (feeding) return;
         heading += cfg.turnGain * (dorHz - venHz);
         double speed = cfg.baseSpeed + cfg.speedGain * (fwdHz - backHz);
         x = arena.wrap(x + speed * Math.cos(heading));
         y = arena.wrap(y + speed * Math.sin(heading));
+        if (cfg.feedRadius > 0 && arena.foodDistance(x, y) <= cfg.feedRadius) {
+            feeding = true;
+            contactStep = steps;
+        }
     }
 
     void sense() { sense(0.01); }
