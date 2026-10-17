@@ -53,6 +53,7 @@ public final class Simulator {
 
         for (Neuron n : neurons) {
             if (n.lesioned) {
+                rng.nextDouble();
                 n.v = n.vReset;
                 n.spiked = false;
                 in[n.index] = 0;
