@@ -56,4 +56,9 @@ tasks.register('runConditioningStats', JavaExec) {
     mainClass = 'ru.mcs.neuroworm.world.ConditioningStats'
 }
 
+tasks.register('runAblationScan', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.AblationScan'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

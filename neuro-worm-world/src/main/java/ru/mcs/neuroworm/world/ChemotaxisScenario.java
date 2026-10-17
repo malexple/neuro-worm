@@ -19,9 +19,16 @@ public final class ChemotaxisScenario {
     public static double[] settle() { return Evolution.settle(); }
 
     public ChemotaxisScenario(double[] offsets, long seed) {
+        this(offsets, seed, java.util.Set.of());
+    }
+
+    public ChemotaxisScenario(double[] offsets, long seed, java.util.Set<String> lesions) {
         double[] g = PlasticityEvolution.BASE;
         net = Evolution.newNetwork();
-        for (Neuron n : net.neurons()) n.thresholdOffset = offsets[n.index];
+        for (Neuron n : net.neurons()) {
+            n.thresholdOffset = offsets[n.index];
+            n.lesioned = lesions.contains(n.name);
+        }
         Evolution.scale(net, Evolution.SENS, Evolution.INTER, g[7]);
         Evolution.scale(net, Evolution.INTER, Evolution.HEAD, g[8]);
         arena.food.add(new Arena.Source(FOOD_X, FOOD_Y, 1.0, 60));
