@@ -58,10 +58,16 @@ public final class AblationScan {
 
     public static void main(String[] args) throws IOException {
         Logger.getLogger(ConnectomeLoader.class.getName()).setLevel(Level.SEVERE);
+        System.out.println("data='" + Evolution.DATA + "' genome="
+                + java.util.Arrays.toString(PlasticityEvolution.baseGenome()));
         double[] off = ChemotaxisScenario.settle();
         Result intact = run(off, Set.of());
         System.out.printf("intact: %.1f +- %.1f | turn rate %.2f rad/s (%d seeds)%n",
                 intact.dist(), se(intact.perSeed()), intact.turn(), SEEDS);
+        if (intact.dist() > 25) {
+            throw new IllegalStateException("Baseline is broken (intact " + intact.dist()
+                    + "): check the genome used by ChemotaxisScenario");
+        }
 
         Network ref = Evolution.newNetwork();
         Map<String, List<String>> classes = new TreeMap<>();

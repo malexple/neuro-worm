@@ -1,11 +1,12 @@
 package ru.mcs.neuroworm.world;
 
+import java.util.Set;
 import java.util.SplittableRandom;
 import ru.mcs.neuroworm.core.Network;
 import ru.mcs.neuroworm.core.Neuron;
 import ru.mcs.neuroworm.core.Simulator;
 
-/** Сцена хемотаксиса с эволюционным геномом. Единая точка входа для viewer и тестов. */
+/** Сцена хемотаксиса. Геном выбирается по набору данных (Evolution.DATA). */
 public final class ChemotaxisScenario {
     public static final double FOOD_X = 140, FOOD_Y = 100;
 
@@ -19,11 +20,11 @@ public final class ChemotaxisScenario {
     public static double[] settle() { return Evolution.settle(); }
 
     public ChemotaxisScenario(double[] offsets, long seed) {
-        this(offsets, seed, java.util.Set.of());
+        this(offsets, seed, Set.of());
     }
 
-    public ChemotaxisScenario(double[] offsets, long seed, java.util.Set<String> lesions) {
-        double[] g = PlasticityEvolution.BASE;
+    public ChemotaxisScenario(double[] offsets, long seed, Set<String> lesions) {
+        double[] g = PlasticityEvolution.baseGenome();
         net = Evolution.newNetwork();
         for (Neuron n : net.neurons()) {
             n.thresholdOffset = offsets[n.index];

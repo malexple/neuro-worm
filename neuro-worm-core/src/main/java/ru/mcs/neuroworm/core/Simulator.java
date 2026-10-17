@@ -84,7 +84,10 @@ public final class Simulator {
                 n.fatigue += n.fatigueInc;
                 n.spikeCount++;
                 int sign = n.transmitter.sign;
-                for (Synapse s : n.out) pending[(tick + s.delay()) % RING][s.target()] += sign * s.weight();
+                for (Synapse s : n.out) {
+                    int sg = s.sign() != 0 ? s.sign() : sign;
+                    pending[(tick + s.delay()) % RING][s.target()] += sg * s.weight();
+                }
                 if (n.releases != null) modulators[n.releases.ordinal()] += n.releaseAmount;
                 listener.onSpike(tick, n.index);
             }

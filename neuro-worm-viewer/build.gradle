@@ -27,4 +27,7 @@ test {
     useJUnitPlatform()
 }
 
-application { mainClass = 'ru.mcs.neuroworm.viewer.ViewerApp' }
+application {
+    mainClass = 'ru.mcs.neuroworm.viewer.ViewerApp'
+    applicationDefaultJvmArgs = ['-Dneuroworm.data=_signed']
+}

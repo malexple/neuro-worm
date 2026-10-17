@@ -29,6 +29,7 @@ public final class Evolution {
     static final String INTER = "^(AIY|AIA|AIB|AIZ)[LR]$";
     static final String HEAD = "^(SMD[DV]|RMD[DV]?|RIM|RIA|RIB|AIB)[LR]$";
     static final double[] FOOD = {140, 100};
+    static String DATA = System.getProperty("neuroworm.data", "");
 
     static double[] decode(double[] x) {
         double[] g = new double[GENES];
@@ -37,8 +38,8 @@ public final class Evolution {
     }
 
     static Network newNetwork() {
-        try (InputStream c = Evolution.class.getResourceAsStream("/connectome.csv");
-             InputStream t = Evolution.class.getResourceAsStream("/neuron_types.csv")) {
+        try (InputStream c = Evolution.class.getResourceAsStream("/connectome" + DATA + ".csv");
+             InputStream t = Evolution.class.getResourceAsStream("/neuron_types" + DATA + ".csv")) {
             Network net = ConnectomeLoader.load(
                     new InputStreamReader(t, StandardCharsets.UTF_8),
                     new InputStreamReader(c, StandardCharsets.UTF_8), K_CHEM, K_GAP).network();

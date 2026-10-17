@@ -26,6 +26,12 @@ public final class Network {
         pre.out.add(new Synapse(post.index, weight, delay));
     }
 
+    public void connect(Neuron pre, Neuron post, double weight, int delay, int sign) {
+        if (weight < 0) throw new IllegalArgumentException("Weight must be >= 0; sign comes from transmitter");
+        if (delay < 1 || delay > MAX_DELAY) throw new IllegalArgumentException("Delay must be in 1.." + MAX_DELAY);
+        pre.out.add(new Synapse(post.index, weight, delay, sign));
+    }
+
     public void connectGap(Neuron a, Neuron b, double conductance) {
         if (conductance <= 0) throw new IllegalArgumentException("Conductance must be > 0");
         a.gaps.add(new GapLink(b.index, conductance));

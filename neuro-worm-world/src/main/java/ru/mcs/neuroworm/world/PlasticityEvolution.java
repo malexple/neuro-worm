@@ -20,6 +20,8 @@ public final class PlasticityEvolution {
     static final int GENES = 6, TRAIN = 4, EVAL = 4;
     static final boolean FIX_D0 = Boolean.getBoolean("fixD0");
     static volatile int rewardDelay = 0;
+    static final double[] BASE_SIGNED = {0.0, 3000.0, 1534.102242056085, 9.89960775795258, 0.002,
+            0.02673445387521428, 0.28422816957024755, 9.338278425686024, 4.994146744007376};
 
     static double[] crippled() {
         double[] g = BASE.clone();
@@ -150,6 +152,14 @@ public final class PlasticityEvolution {
         return IntStream.range(0, 20).parallel()
                 .mapToDouble(k -> episode(crippled(), off, 300_000 + k, rule, learner, false))
                 .average().orElse(0);
+    }
+
+    static double[] baseGenome() {
+        if (Evolution.DATA.isEmpty()) return BASE;
+        if (BASE_SIGNED.length != 9) {
+            throw new IllegalStateException("Fill PlasticityEvolution.BASE_SIGNED from the runSignedEvolution log");
+        }
+        return BASE_SIGNED;
     }
 
 }

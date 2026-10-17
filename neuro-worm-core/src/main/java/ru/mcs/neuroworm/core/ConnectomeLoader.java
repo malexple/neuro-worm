@@ -18,7 +18,7 @@ import java.util.TreeSet;
  */
 public final class ConnectomeLoader {
 
-    public record Report(int neurons, int chemical, int gap, List<String> inferred) { }
+    public record Report(int neurons, int chemical, int gap, int signOverrides, List<String> inferred) { }
 
     public record LoadResult(Network network, Report report) { }
 
@@ -67,13 +67,19 @@ public final class ConnectomeLoader {
         int chemical = 0;
         int gap = 0;
         Set<String> gapSeen = new HashSet<>();
+        int overrides = 0;
         for (Row e : edges) {
             double w = parseWeight(e);
             Neuron a = net.get(e.f[0]);
             Neuron b = net.get(e.f[1]);
             switch (e.f[2].toUpperCase(Locale.ROOT)) {
                 case "S" -> {
-                    net.connect(a, b, chemicalK * w, 1);
+                    int sign = 0;
+                    if (e.f.length > 4 && !e.f[4].isEmpty()) {
+                        sign = parseSign(e);
+                        if (sign != 0) overrides++;
+                    }
+                    net.connect(a, b, chemicalK * w, 1, sign);
                     chemical++;
                 }
                 case "G" -> {
@@ -86,7 +92,17 @@ public final class ConnectomeLoader {
                 default -> throw new IllegalArgumentException("line " + e.line + ": unknown type '" + e.f[2] + "'");
             }
         }
-        return new LoadResult(net, new Report(net.size(), chemical, gap, List.copyOf(inferred)));
+        return new LoadResult(net, new Report(net.size(), chemical, gap, overrides, List.copyOf(inferred)));
+    }
+
+    private static int parseSign(Row r) {
+        try {
+            int s = Integer.parseInt(r.f[4]);
+            if (s < -1 || s > 1) throw new NumberFormatException();
+            return s;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("line " + r.line + ": sign must be -1, 0 or 1: '" + r.f[4] + "'");
+        }
     }
 
     private static List<Row> rows(Reader reader, String headerFirstColumn, int minColumns) throws IOException {
