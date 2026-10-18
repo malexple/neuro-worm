@@ -27,8 +27,12 @@ public final class ChemotaxisScenario implements Scenario {
         this(offsets, seed, lesions, PlasticityEvolution.baseGenome());
     }
 
-    /** Геном: 9 генов (базовый) или 15 (с пируэтами и мёртвой зоной). */
     public ChemotaxisScenario(double[] offsets, long seed, Set<String> lesions, double[] g) {
+        this(offsets, seed, lesions, g, null);
+    }
+
+    /** Геном: 9 генов (базовый) или 15 (с пируэтами и мёртвой зоной). */
+    public ChemotaxisScenario(double[] offsets, long seed, Set<String> lesions, double[] g, Arena.Zone pain) {
         net = Evolution.newNetwork();
         for (Neuron n : net.neurons()) {
             n.thresholdOffset = offsets[n.index];
@@ -37,6 +41,7 @@ public final class ChemotaxisScenario implements Scenario {
         Evolution.scale(net, Evolution.SENS, Evolution.INTER, g[7]);
         Evolution.scale(net, Evolution.INTER, Evolution.HEAD, g[8]);
         arena.food.add(new Arena.Source(FOOD_X, FOOD_Y, 1.0, 60));
+        if (pain != null) arena.painZones.add(pain);
         sim = new Simulator(net, seed);
         sim.run(300);
         worm = new Worm(arena, net, 80, 100, new SplittableRandom(seed).nextDouble() * 2 * Math.PI);
@@ -49,6 +54,10 @@ public final class ChemotaxisScenario implements Scenario {
         worm.cfg.baseSpeed = g[6];
         worm.cfg.feedRadius = 3.0;
         if (g.length >= 15) {
+            if (g.length >= 16) {
+                worm.cfg.painGainHz = g[15];
+                worm.cfg.commandTrigger = true;
+            }
             worm.cfg.pirouetteThreshold = g[9];
             worm.cfg.reverseSteps = (int) Math.round(g[10]);
             worm.cfg.reverseSpeed = g[11];

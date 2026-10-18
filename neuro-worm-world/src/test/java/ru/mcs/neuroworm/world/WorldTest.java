@@ -123,4 +123,15 @@ class WorldTest {
         w.drive(5, 0, 8, 0);
         assertEquals(0.3, w.heading, 1e-12);
     }
+
+    @Test
+    void painZoneOnlyInsideRadius() {
+        Arena a = new Arena(200);
+        a.painZones.add(new Arena.Zone(110, 100, 12));
+        assertEquals(1.0, a.pain(110, 100), 0);
+        assertEquals(1.0, a.pain(122, 100), 0);
+        assertEquals(0.0, a.pain(123, 100), 0);
+        assertEquals(0.0, a.pain(80, 100), 0);
+        assertEquals(0.0, a.pain(140, 100), 0);
+    }
 }

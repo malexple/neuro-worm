@@ -105,4 +105,28 @@ tasks.register('runSeizureCheck', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runPainCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runPainEvolution', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainEvolution'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runPainProbe', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainProbe'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runPainRoc', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainRoc'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

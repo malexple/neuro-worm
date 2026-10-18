@@ -30,6 +30,8 @@ public final class Worm {
         public int turnSteps = 30;
         public int cooldownSteps = 100;
         public double turnDeadband = 0;   // Гц
+        public boolean commandTrigger = false; // триггер пируэта по (AVA,AVD) минус AVB, а не по моторным пулам
+        public double triggerAlpha = 0.05;
     }
 
     private static final int RUN = 0, REVERSE = 1, TURN = 2;
@@ -52,6 +54,8 @@ public final class Worm {
     private int contactStep = -1;
     private int phase = RUN, phaseLeft, cooldown, turnDir = 1;
     private double rotation, pathLength;
+    private final int[] cmdBack, cmdFwd;
+    private double triggerHz;
 
     public Worm(Arena arena, Network net, double x, double y, double heading) {
         this.arena = arena;
@@ -63,6 +67,8 @@ public final class Worm {
         back = pool(net, "^(VA|DA)\\d\\d$");
         dor = pool(net, "^(SMDD|RMDD)[LR]$");
         ven = pool(net, "^(SMDV|RMDV)[LR]$");
+        cmdBack = optionalPool(net, "^(AVA|AVD)[LR]$");
+        cmdFwd = optionalPool(net, "^AVB[LR]$");
         awaL = net.get("AWAL");
         awaR = net.get("AWAR");
         awcL = net.get("AWCL");
@@ -104,6 +110,9 @@ public final class Worm {
         backHz += cfg.emaAlpha * (b - backHz);
         dorHz += cfg.emaAlpha * (d - dorHz);
         venHz += cfg.emaAlpha * (v - venHz);
+        if (cmdBack.length > 0 && cmdFwd.length > 0) {
+            triggerHz += cfg.triggerAlpha * (poolHz(cmdBack, ticks) - poolHz(cmdFwd, ticks) - triggerHz);
+        }
         drive(fwdHz, backHz, dorHz, venHz);
         sense(ticks / 1000.0);
     }
@@ -135,8 +144,7 @@ public final class Worm {
                 if (cfg.pirouetteThreshold > 0) {
                     if (cooldown > 0) {
                         cooldown--;
-                    } else if (backHz - fwdHz > cfg.pirouetteThreshold) {
-                        phase = REVERSE;
+                    } else if ((cfg.commandTrigger ? triggerHz : backHz - fwdHz) > cfg.pirouetteThreshold) {    phase = REVERSE;
                         phaseLeft = Math.max(1, cfg.reverseSteps);
                         turnDir = diff >= 0 ? 1 : -1;
                     }
@@ -193,5 +201,10 @@ public final class Worm {
         double pain = cfg.painGainHz * arena.pain(x, y);
         ashL.stimulusHz = pain;
         ashR.stimulusHz = pain;
+    }
+
+    private static int[] optionalPool(Network net, String regex) {
+        Pattern p = Pattern.compile(regex);
+        return net.neurons().stream().filter(n -> p.matcher(n.name).matches()).mapToInt(n -> n.index).toArray();
     }
 }
