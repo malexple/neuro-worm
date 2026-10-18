@@ -87,4 +87,40 @@ class WorldTest {
         assertTrue(w.x > x1);
         assertTrue(!w.feeding());
     }
+
+    @Test
+    void pirouetteReversesThenTurns() {
+        Arena a = new Arena(200);
+        Worm w = new Worm(a, miniNet(), 100, 100, 0);
+        w.cfg.pirouetteThreshold = 5;
+        w.cfg.reverseSteps = 3;
+        w.cfg.turnSteps = 2;
+        w.cfg.omegaAngle = 1.0;
+        w.cfg.cooldownSteps = 0;
+        w.cfg.baseSpeed = 0.2;
+        w.cfg.reverseSpeed = 0.1;
+        w.cfg.speedGain = 0;
+        w.cfg.turnGain = 0;
+        w.drive(0, 10, 2, 0);          // пробег, запуск пируэта
+        double x1 = w.x;
+        w.drive(0, 10, 2, 0);          // реверс 1
+        assertTrue(w.x < x1);
+        w.drive(0, 10, 2, 0);          // реверс 2
+        w.drive(0, 10, 2, 0);          // реверс 3
+        w.drive(0, 10, 2, 0);          // поворот 1
+        w.drive(0, 10, 2, 0);          // поворот 2
+        assertEquals(1.0, w.heading, 1e-9);
+    }
+
+    @Test
+    void deadbandSuppressesSmallTurn() {
+        Arena a = new Arena(200);
+        Worm w = new Worm(a, miniNet(), 100, 100, 0);
+        w.cfg.turnGain = 0.1;
+        w.cfg.turnDeadband = 5;
+        w.drive(5, 0, 3, 0);
+        assertEquals(0.0, w.heading, 1e-12);
+        w.drive(5, 0, 8, 0);
+        assertEquals(0.3, w.heading, 1e-12);
+    }
 }

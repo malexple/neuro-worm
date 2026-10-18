@@ -9,45 +9,49 @@ public final class Worm {
     public static final class Config {
         public double speedGain = 0.01;   // единиц за шаг на 1 Гц (вперёд - назад)
         public double turnGain = 0.02;    // радиан за шаг на 1 Гц (дорсальный - вентральный)
-        public double odorGainHz = 100;   // Гц сенсора на единицу концентрации
+        public double odorGainHz = 100;
         public double painGainHz = 200;
         public double sensorOffset = 2.0;
-        public double emaAlpha = 0.2;     // сглаживание частот пулов за шаг мира
+        public double emaAlpha = 0.2;
         public double baseSpeed = 0;
-        public double awaDerivGain = 0;   // Гц на единицу концентрации в секунду (рост запаха)
-        public double awcOffGain = 0;     // Гц на единицу концентрации в секунду (падение запаха)
-        public double awcTonicHz = 0;     // тоническая активность AWC без запаха
-        public double derivAlpha = 0.1;   // сглаживание производной
-        public double aseConcGain = 0;   // Гц на единицу концентрации соли
-        public double aseOnGain = 0;     // ASEL: Гц на единицу/с роста
-        public double aseOffGain = 0;    // ASER: Гц на единицу/с падения
+        public double awaDerivGain = 0;
+        public double awcOffGain = 0;
+        public double awcTonicHz = 0;
+        public double derivAlpha = 0.1;
+        public double aseConcGain = 0;
+        public double aseOnGain = 0;
+        public double aseOffGain = 0;
         public double aseTonicHz = 0;
-        public double feedRadius = 0;   // 0 = питание выключено
+        public double feedRadius = 0;     // 0 = питание выключено
+        public double pirouetteThreshold = 0; // Гц (назад - вперёд); 0 = пируэты выключены
+        public int reverseSteps = 50;
+        public double reverseSpeed = 0.1;
+        public double omegaAngle = 2.0;   // рад
+        public int turnSteps = 30;
+        public int cooldownSteps = 100;
+        public double turnDeadband = 0;   // Гц
     }
+
+    private static final int RUN = 0, REVERSE = 1, TURN = 2;
 
     public final Config cfg = new Config();
     public double x, y, heading;
+    /** NaN: чувствовать поле соли в арене; число: подать постоянный уровень CS (обучение). */
+    public double csOverride = Double.NaN;
 
     private final Arena arena;
     private final Network net;
     private final int[] fwd, back, dor, ven;
-    private final Neuron awaL, awaR, ashL, ashR, awcL, awcR;
+    private final Neuron awaL, awaR, awcL, awcR, aseL, aseR, ashL, ashR;
     private final long[] lastCounts;
     private double fwdHz, backHz, dorHz, venHz;
-    private double prevL = Double.NaN, prevR = Double.NaN, dcL, dcR;
-    private double dcBase;
-    public double dcMean() { return 0.5 * (dcL + dcR); }
-    public double dcBaseline() { return dcBase; }
+    private double prevL = Double.NaN, prevR = Double.NaN, dcL, dcR, dcBase;
     private double prevSL = Double.NaN, prevSR = Double.NaN, dcSL, dcSR;
-    /** NaN: чувствовать поле соли в арене; число: подать постоянный уровень CS (обучение). */
-    public double csOverride = Double.NaN;
-    private final Neuron aseL, aseR;
     private boolean feeding;
     private int steps;
     private int contactStep = -1;
-
-    public boolean feeding() { return feeding; }
-    public int contactStep() { return contactStep; }
+    private int phase = RUN, phaseLeft, cooldown, turnDir = 1;
+    private double rotation, pathLength;
 
     public Worm(Arena arena, Network net, double x, double y, double heading) {
         this.arena = arena;
@@ -60,11 +64,11 @@ public final class Worm {
         dor = pool(net, "^(SMDD|RMDD)[LR]$");
         ven = pool(net, "^(SMDV|RMDV)[LR]$");
         awaL = net.get("AWAL");
+        awaR = net.get("AWAR");
         awcL = net.get("AWCL");
         awcR = net.get("AWCR");
         aseL = net.get("ASEL");
         aseR = net.get("ASER");
-        awaR = net.get("AWAR");
         ashL = net.get("ASHL");
         ashR = net.get("ASHR");
         lastCounts = new long[net.size()];
@@ -84,6 +88,13 @@ public final class Worm {
         return spikes * 1000.0 / ticks / ids.length;
     }
 
+    public boolean feeding() { return feeding; }
+    public int contactStep() { return contactStep; }
+    public double totalRotation() { return rotation; }
+    public double pathLength() { return pathLength; }
+    public double dcMean() { return 0.5 * (dcL + dcR); }
+    public double dcBaseline() { return dcBase; }
+
     /** Вызывается после каждых `ticks` тиков симуляции. */
     public void update(int ticks) {
         steps++;
@@ -99,8 +110,42 @@ public final class Worm {
 
     void drive(double fwdHz, double backHz, double dorHz, double venHz) {
         if (feeding) return;
-        heading += cfg.turnGain * (dorHz - venHz);
-        double speed = cfg.baseSpeed + cfg.speedGain * (fwdHz - backHz);
+        double diff = dorHz - venHz;
+        double dh = 0, speed;
+        switch (phase) {
+            case REVERSE -> {
+                speed = -cfg.reverseSpeed;
+                if (--phaseLeft <= 0) {
+                    phase = TURN;
+                    phaseLeft = Math.max(1, cfg.turnSteps);
+                }
+            }
+            case TURN -> {
+                speed = 0;
+                dh = turnDir * cfg.omegaAngle / Math.max(1, cfg.turnSteps);
+                if (--phaseLeft <= 0) {
+                    phase = RUN;
+                    cooldown = cfg.cooldownSteps;
+                }
+            }
+            default -> {
+                double excess = Math.max(0, Math.abs(diff) - cfg.turnDeadband) * Math.signum(diff);
+                dh = cfg.turnGain * excess;
+                speed = cfg.baseSpeed + cfg.speedGain * (fwdHz - backHz);
+                if (cfg.pirouetteThreshold > 0) {
+                    if (cooldown > 0) {
+                        cooldown--;
+                    } else if (backHz - fwdHz > cfg.pirouetteThreshold) {
+                        phase = REVERSE;
+                        phaseLeft = Math.max(1, cfg.reverseSteps);
+                        turnDir = diff >= 0 ? 1 : -1;
+                    }
+                }
+            }
+        }
+        heading += dh;
+        rotation += Math.abs(dh);
+        pathLength += Math.abs(speed);
         x = arena.wrap(x + speed * Math.cos(heading));
         y = arena.wrap(y + speed * Math.sin(heading));
         if (cfg.feedRadius > 0 && arena.foodDistance(x, y) <= cfg.feedRadius) {

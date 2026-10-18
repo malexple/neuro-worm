@@ -6,7 +6,7 @@ import ru.mcs.neuroworm.core.Network;
 import ru.mcs.neuroworm.core.Neuron;
 import ru.mcs.neuroworm.core.Simulator;
 
-/** Сцена хемотаксиса. Геном выбирается по набору данных (Evolution.DATA). */
+/** Сцена хемотаксиса. Геном по умолчанию выбирается по набору данных (Evolution.DATA). */
 public final class ChemotaxisScenario implements Scenario {
     public static final double FOOD_X = 140, FOOD_Y = 100;
 
@@ -24,7 +24,11 @@ public final class ChemotaxisScenario implements Scenario {
     }
 
     public ChemotaxisScenario(double[] offsets, long seed, Set<String> lesions) {
-        double[] g = PlasticityEvolution.baseGenome();
+        this(offsets, seed, lesions, PlasticityEvolution.baseGenome());
+    }
+
+    /** Геном: 9 генов (базовый) или 15 (с пируэтами и мёртвой зоной). */
+    public ChemotaxisScenario(double[] offsets, long seed, Set<String> lesions, double[] g) {
         net = Evolution.newNetwork();
         for (Neuron n : net.neurons()) {
             n.thresholdOffset = offsets[n.index];
@@ -44,6 +48,14 @@ public final class ChemotaxisScenario implements Scenario {
         worm.cfg.turnGain = g[5];
         worm.cfg.baseSpeed = g[6];
         worm.cfg.feedRadius = 3.0;
+        if (g.length >= 15) {
+            worm.cfg.pirouetteThreshold = g[9];
+            worm.cfg.reverseSteps = (int) Math.round(g[10]);
+            worm.cfg.reverseSpeed = g[11];
+            worm.cfg.omegaAngle = g[12];
+            worm.cfg.turnDeadband = g[13];
+            worm.cfg.cooldownSteps = (int) Math.round(g[14]);
+        }
         world = new World(arena, worm, sim);
     }
 
