@@ -27,7 +27,11 @@ test {
     useJUnitPlatform()
 }
 
-application {
-    mainClass = 'ru.mcs.neuroworm.viewer.ViewerApp'
-    applicationDefaultJvmArgs = ['-Dneuroworm.data=_signed']
+
+run {
+    systemProperty 'scene', project.findProperty('scene') ?: 'chemotaxis'
+    def data = project.findProperty('data') ?: '_signed'
+    systemProperty 'neuroworm.data', data == 'legacy' ? '' : data
 }
+
+application { mainClass = 'ru.mcs.neuroworm.viewer.ViewerApp' }

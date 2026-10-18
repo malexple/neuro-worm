@@ -7,7 +7,7 @@ import ru.mcs.neuroworm.core.Neuron;
 import ru.mcs.neuroworm.core.Simulator;
 
 /** Сцена хемотаксиса. Геном выбирается по набору данных (Evolution.DATA). */
-public final class ChemotaxisScenario {
+public final class ChemotaxisScenario implements Scenario {
     public static final double FOOD_X = 140, FOOD_Y = 100;
 
     public final Arena arena = new Arena(200);
@@ -48,4 +48,14 @@ public final class ChemotaxisScenario {
     }
 
     public double distanceToFood() { return arena.distance(worm.x, worm.y, FOOD_X, FOOD_Y); }
+
+    @Override public Arena arena() { return arena; }
+    @Override public Network net() { return net; }
+    @Override public Simulator sim() { return sim; }
+    @Override public Worm worm() { return worm; }
+    @Override public void step() { world.step(); }
+    @Override public double distanceToTarget() { return distanceToFood(); }
+    @Override public double targetX() { return FOOD_X; }
+    @Override public double targetY() { return FOOD_Y; }
+    @Override public double fieldAt(double x, double y) { return arena.odor(x, y); }
 }
