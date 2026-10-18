@@ -190,4 +190,28 @@ tasks.register('runPainSignalLevel', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runAversive', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.AversiveConditioning'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runAversiveWeights', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.AversiveWeights'
+    systemProperty 'neuroworm.data', '_signed'
+}
+tasks.register('runAversiveHeadroom', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.AversiveConditioning'
+    systemProperty 'neuroworm.data', '_signed'
+    systemProperty 'neuroworm.maxScale', '20'
+}
+
+tasks.register('runPainCircuitFit', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainCircuitFit'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

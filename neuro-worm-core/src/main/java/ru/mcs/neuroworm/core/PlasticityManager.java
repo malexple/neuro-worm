@@ -16,6 +16,9 @@ public final class PlasticityManager {
     public double maxScale = 10;
     /** Знаковая награда, обычно в [-1, 1]. */
     public double reward;
+    /** Уровень стресса (0..1), задаётся внешним кодом; усиливает скорость обучения. */
+    public double stress;
+    public double stressGain = 0;
 
     private boolean learning = true;
     private final Neuron[] pre, post;
@@ -44,6 +47,7 @@ public final class PlasticityManager {
 
     /** Вызывать в конце каждого тика (Simulator.setTickListener). */
     public void afterTick() {
+        double etaEff = eta * (1 + stressGain * Math.max(0, Math.min(1, stress)));
         for (int p = 0; p < pre.length; p++) xPre[p] += -xPre[p] / tauTrace + (pre[p].spikedLastTick() ? 1 : 0);
         for (int q = 0; q < post.length; q++) xPost[q] += -xPost[q] / tauTrace + (post[q].spikedLastTick() ? 1 : 0);
         for (int q = 0; q < post.length; q++) {
@@ -55,7 +59,7 @@ public final class PlasticityManager {
                 e -= e / tauElig;
                 elig[q][p] = e;
                 if (learning && reward != 0) {
-                    s.scale = Math.max(minScale, Math.min(maxScale, s.scale + eta * reward * e));
+                    s.scale = Math.max(minScale, Math.min(maxScale, s.scale + etaEff * reward * e));
                 }
             }
         }

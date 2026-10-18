@@ -40,6 +40,8 @@ public final class Worm {
     public double x, y, heading;
     /** NaN: чувствовать поле соли в арене; число: подать постоянный уровень CS (обучение). */
     public double csOverride = Double.NaN;
+    /** NaN: боль от арены; число: подать постоянный стимул ASH в Гц (обучение). */
+    public double painOverride = Double.NaN;
 
     private final Arena arena;
     private final Network net;
@@ -199,7 +201,7 @@ public final class Worm {
             aseR.stimulusHz = cfg.aseTonicHz + cfg.aseConcGain * sr + cfg.aseOffGain * Math.max(0, -dcSR);
         }
 
-        double pain = cfg.painGainHz * arena.pain(x, y);
+        double pain = Double.isNaN(painOverride) ? cfg.painGainHz * arena.pain(x, y) : painOverride;
         ashL.stimulusHz = pain;
         ashR.stimulusHz = pain;
     }
