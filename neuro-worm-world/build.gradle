@@ -129,4 +129,16 @@ tasks.register('runPainRoc', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runIndependentRuns', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.IndependentRuns'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runPirouetteToggle', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PirouetteToggle'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

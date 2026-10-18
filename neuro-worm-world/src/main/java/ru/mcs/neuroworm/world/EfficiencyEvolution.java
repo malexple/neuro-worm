@@ -46,8 +46,10 @@ public final class EfficiencyEvolution {
         return g;
     }
 
-    static Result run(double[] g, double[] off, long seed) {
-        ChemotaxisScenario s = new ChemotaxisScenario(off, seed, Set.of(), g);
+    static Result run(double[] g, double[] off, long seed) { return run(g, off, seed, Set.of()); }
+
+    static Result run(double[] g, double[] off, long seed, Set<String> lesions) {
+        ChemotaxisScenario s = new ChemotaxisScenario(off, seed, lesions, g);
         Worm w = s.worm;
         for (int i = 0; i < RUN_STEPS && !w.feeding(); i++) s.step();
         boolean found = w.feeding();
@@ -79,17 +81,24 @@ public final class EfficiencyEvolution {
         double[] off = Evolution.settle();
         double[] reference = extend(PlasticityEvolution.baseGenome());
         report("reference", reference, off);
+        double[] g = evolve(off, Long.getLong("neuroworm.evoSeed", 0), true, 25);
+        report("reference", reference, off);
+        report("evolved", g, off);
+        System.out.println("GENOME " + Arrays.toString(g));
+    }
 
-        int pop = 32, elite = 6, generations = 25, seeds = 6;
-        SplittableRandom rng = new SplittableRandom(0);
+    static double[] evolve(double[] off, long evoSeed, boolean seedReference, int generations) {
+        int pop = 32, elite = 6, seeds = 6;
+        SplittableRandom rng = new SplittableRandom(evoSeed);
         double[][] p = new double[pop][];
-        p[0] = encode(reference);
-        for (int i = 1; i < pop; i++) p[i] = rng.doubles(GENES).toArray();
+        int first = 0;
+        if (seedReference) p[first++] = encode(extend(PlasticityEvolution.baseGenome()));
+        for (int i = first; i < pop; i++) p[i] = rng.doubles(GENES).toArray();
 
         double[] best = p[0];
         for (int gen = 0; gen < generations; gen++) {
             double[][] cur = p;
-            long seed0 = gen * 1000L;
+            long seed0 = evoSeed * 1_000_000L + gen * 1000L;
             double[] fit = new double[pop];
             IntStream.range(0, pop).parallel().forEach(i -> {
                 double[] g = decode(cur[i]);
@@ -102,8 +111,8 @@ public final class EfficiencyEvolution {
             double[][] sorted = new double[pop][];
             for (int i = 0; i < pop; i++) sorted[i] = cur[order[i]];
             best = sorted[0];
-            System.out.printf("gen %d best cost %.1f median %.1f genes %s%n", gen, fit[order[0]],
-                    fit[order[pop / 2]], Arrays.toString(decode(best)));
+            System.out.printf("evo %d gen %d best cost %.1f median %.1f genes %s%n", evoSeed, gen,
+                    fit[order[0]], fit[order[pop / 2]], Arrays.toString(decode(best)));
             for (int i = elite; i < pop; i++) {
                 double[] parent = sorted[rng.nextInt(elite)];
                 double[] child = new double[GENES];
@@ -114,9 +123,6 @@ public final class EfficiencyEvolution {
             }
             p = sorted;
         }
-        double[] g = decode(best);
-        report("reference", reference, off);
-        report("evolved", g, off);
-        System.out.println("GENOME " + Arrays.toString(g));
+        return decode(best);
     }
 }
