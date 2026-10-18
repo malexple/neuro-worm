@@ -26,10 +26,7 @@ import javafx.stage.Stage;
 import ru.mcs.neuroworm.core.ConnectomeLoader;
 import ru.mcs.neuroworm.core.Neuron;
 import ru.mcs.neuroworm.core.NeuronType;
-import ru.mcs.neuroworm.world.ChemotaxisScenario;
-import ru.mcs.neuroworm.world.SaltScenario;
-import ru.mcs.neuroworm.world.Scenario;
-import ru.mcs.neuroworm.world.Worm;
+import ru.mcs.neuroworm.world.*;
 
 public final class ViewerApp extends Application {
     private static final double ARENA = 200, SCALE = 3.0;
@@ -66,7 +63,8 @@ public final class ViewerApp extends Application {
     }
 
     private Scenario newScenario() {
-        Scenario s = SALT ? SaltScenario.create(offsets, seed++) : new ChemotaxisScenario(offsets, seed++);
+        Scenario s = SALT ? SaltScenario.create(offsets, seed++)
+                : new ChemotaxisScenario(offsets, seed++, java.util.Set.of(), EfficiencyEvolution.EVOLVED);
         s.sim().setSpikeListener((t, i) -> {
             if (!training) spikes.add(i);
         });

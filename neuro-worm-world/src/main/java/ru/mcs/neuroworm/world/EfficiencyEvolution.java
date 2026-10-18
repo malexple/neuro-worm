@@ -16,6 +16,9 @@ public final class EfficiencyEvolution {
     static final double[] HI = {400, 3000, 3000, 40, 0.05, 0.1, 0.3, 10, 10, 15, 150, 0.2, 3.0, 10, 400};
     static final int RUN_STEPS = 3000;
     static final double T_MAX = 30, MISS_PENALTY = 40, ROT_WEIGHT = 0.02;
+    public static final double[] EVOLVED = {99.30105452440773, 1901.8658246127948, 3000.0, 0.0,
+            0.0040122839022799905, -0.014803350686865988, 0.3, 10.0, 8.690448777106926, 0.0,
+            56.12782208572409, 0.12835368423677415, 0.5879719900339873, 7.2910889115466855, 120.45916972623894};
 
     record Result(boolean found, double time, double rotation, double cost) { }
 

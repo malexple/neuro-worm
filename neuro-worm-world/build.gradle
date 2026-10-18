@@ -99,4 +99,10 @@ tasks.register('runEfficiencySigned', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runSeizureCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.SeizureCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }
