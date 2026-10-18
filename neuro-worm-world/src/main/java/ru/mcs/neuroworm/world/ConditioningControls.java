@@ -8,9 +8,7 @@ public final class ConditioningControls {
     public static void main(String[] args) {
         Logger.getLogger(ConnectomeLoader.class.getName()).setLevel(Level.SEVERE);
         double[] off = Evolution.settle();
-        var cd = new ConditioningEvolution.Cond(201.41447635835283, 1785.9056477375857, 2813.328520497241,
-                22.98303364691824, 7.278228212404638, 0.014821520389183088, 1281.1734028023334,
-                1.0575997135100692, 0.6426611029113689);
+        var cd =  new ConditioningEvolution.Cond(72.67748465146242, 3000.0, 2339.3681199859384, 3.515398863875265, 10.0, 0.00179437094059225, 271.71582918241495, 1.568973640348443, -0.6507395051063134);
         var deaf = new ConditioningEvolution.Cond(0, 0, 0, 0, cd.sAse(), cd.eta(), cd.tauElig(),
                 cd.aMinus(), cd.rewardGain());
         var none = new ConditioningEvolution.Learner();

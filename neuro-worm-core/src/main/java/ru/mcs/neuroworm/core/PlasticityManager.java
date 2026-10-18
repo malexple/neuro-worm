@@ -1,5 +1,6 @@
 package ru.mcs.neuroworm.core;
 
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
@@ -63,7 +64,7 @@ public final class PlasticityManager {
     public double[][] scales() {
         double[][] r = new double[post.length][pre.length];
         for (int q = 0; q < post.length; q++) {
-            for (int p = 0; p < pre.length; p++) r[q][p] = syn[q][p] == null ? 1 : syn[q][p].scale;
+            for (int p = 0; p < pre.length; p++) r[q][p] = syn[q][p] == null ? Double.NaN : syn[q][p].scale;
         }
         return r;
     }
@@ -73,4 +74,8 @@ public final class PlasticityManager {
             for (int p = 0; p < pre.length; p++) if (syn[q][p] != null) syn[q][p].scale = s[q][p];
         }
     }
+
+    public String[] preNames() { return Arrays.stream(pre).map(n -> n.name).toArray(String[]::new); }
+
+    public String[] postNames() { return Arrays.stream(post).map(n -> n.name).toArray(String[]::new); }
 }
