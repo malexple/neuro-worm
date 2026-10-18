@@ -12,13 +12,27 @@ import ru.mcs.neuroworm.core.ConnectomeLoader;
 /** Эволюция 15 генов хемотаксиса с ценой пути: время до еды + штраф за суммарный поворот. */
 public final class EfficiencyEvolution {
     static final int GENES = 15;
-    static final double[] LO = {0, 0, 0, 0, 0.002, -0.1, 0.0, 0.1, 0.1, 0, 20, 0.02, 0.5, 0, 50};
-    static final double[] HI = {400, 3000, 3000, 40, 0.05, 0.1, 0.3, 10, 10, 15, 150, 0.2, 3.0, 10, 400};
-    static final int RUN_STEPS = 3000;
-    static final double T_MAX = 30, MISS_PENALTY = 40, ROT_WEIGHT = 0.02;
+    static final double[] LO = {0, 0, 0, 0, 0.0002, -0.1, 0.008, 0.1, 0.1, 0, 20, 0.002, 0.5, 0, 50};
+    static final double[] HI = {400, 30000, 30000, 40, 0.005, 0.1, 0.03, 10, 10, 15, 150, 0.02, 3.0, 10, 400};
+    static final int RUN_STEPS = 10_000;
+    static final double T_MAX = 100, MISS_PENALTY = 100, ROT_WEIGHT = 0.02;
     public static final double[] EVOLVED = {99.30105452440773, 1901.8658246127948, 3000.0, 0.0,
             0.0040122839022799905, -0.014803350686865988, 0.3, 10.0, 8.690448777106926, 0.0,
             56.12782208572409, 0.12835368423677415, 0.5879719900339873, 7.2910889115466855, 120.45916972623894};
+
+    static final boolean FREEZE_PIROUETTE = Boolean.getBoolean("neuroworm.freezePirouette");
+
+    /** Переводит геном из унаследованного масштаба скорости (до 0,3 за шаг) в физический (до 0,03). */
+    static double[] scaleToPhysical(double[] legacy) {
+        double[] g = legacy.clone();
+        g[1] *= 10;
+        g[2] *= 10;
+        g[4] *= 0.1;
+        g[6] *= 0.1;
+        g[11] *= 0.1;
+        for (int i = 0; i < GENES; i++) g[i] = Math.max(LO[i], Math.min(HI[i], g[i]));
+        return g;
+    }
 
     record Result(boolean found, double time, double rotation, double cost) { }
 
@@ -81,19 +95,22 @@ public final class EfficiencyEvolution {
         double[] off = Evolution.settle();
         double[] reference = extend(PlasticityEvolution.baseGenome());
         report("reference", reference, off);
-        double[] g = evolve(off, Long.getLong("neuroworm.evoSeed", 0), true, 25);
+        double[] g = evolve(off, Long.getLong("neuroworm.evoSeed", 0), reference, 25);
         report("reference", reference, off);
         report("evolved", g, off);
         System.out.println("GENOME " + Arrays.toString(g));
     }
 
-    static double[] evolve(double[] off, long evoSeed, boolean seedReference, int generations) {
-        int pop = 32, elite = 6, seeds = 6;
+    static double[] evolve(double[] off, long evoSeed, double[] seedGenome, int generations) {
+        double sigma = Double.parseDouble(System.getProperty("neuroworm.sigma", "0.12"));
+        int pop = Integer.getInteger("neuroworm.pop", 32), elite = 6;
+        int seeds = Integer.getInteger("neuroworm.seeds", 6);
         SplittableRandom rng = new SplittableRandom(evoSeed);
         double[][] p = new double[pop][];
         int first = 0;
-        if (seedReference) p[first++] = encode(extend(PlasticityEvolution.baseGenome()));
+        if (seedGenome != null) p[first++] = encode(seedGenome);
         for (int i = first; i < pop; i++) p[i] = rng.doubles(GENES).toArray();
+        if (FREEZE_PIROUETTE) for (double[] x : p) x[9] = 0;
 
         double[] best = p[0];
         for (int gen = 0; gen < generations; gen++) {
@@ -103,8 +120,14 @@ public final class EfficiencyEvolution {
             IntStream.range(0, pop).parallel().forEach(i -> {
                 double[] g = decode(cur[i]);
                 double sum = 0;
-                for (int k = 0; k < seeds; k++) sum += run(g, off, seed0 + k).cost();
-                fit[i] = sum / seeds;
+                int done = 0;
+                for (int k = 0; k < seeds; k++) {
+                    Result r = run(g, off, seed0 + k);
+                    sum += r.cost();
+                    done++;
+                    if (k == 0 && !r.found()) break;
+                }
+                fit[i] = sum / done;
             });
             Integer[] order = IntStream.range(0, pop).boxed().toArray(Integer[]::new);
             Arrays.sort(order, Comparator.comparingDouble(i -> fit[i]));
@@ -117,8 +140,9 @@ public final class EfficiencyEvolution {
                 double[] parent = sorted[rng.nextInt(elite)];
                 double[] child = new double[GENES];
                 for (int k = 0; k < GENES; k++) {
-                    child[k] = Math.max(0, Math.min(1, parent[k] + 0.12 * rng.nextGaussian()));
+                    child[k] = Math.max(0, Math.min(1, parent[k] + sigma * rng.nextGaussian()));
                 }
+                if (FREEZE_PIROUETTE) child[9] = 0;
                 sorted[i] = child;
             }
             p = sorted;

@@ -24,12 +24,13 @@ import ru.mcs.neuroworm.core.Neuron;
 public final class IndependentRuns {
     static final int RUNS = Integer.getInteger("neuroworm.runs", 5);
     static final int GENERATIONS = Integer.getInteger("neuroworm.generations", 25);
-    static final int SEEDS = 12;
+    static final int SEEDS = Integer.getInteger("neuroworm.ablationSeeds", 12);
     static final double IMPORTANT = 10;
-    static final Path DIR = Path.of("genomes");
     static final String[] GENE_NAMES = {"awaC", "awaDeriv", "awcOff", "awcTonic", "speedGain", "turnGain",
             "baseSpeed", "sens->inter", "inter->head", "pirThr", "revSteps", "revSpeed", "omega", "deadband",
             "cooldown"};
+    static final Path DIR = Path.of(System.getProperty("neuroworm.genomeDir", "genomes"));
+    static final boolean SEED_SCALED = Boolean.getBoolean("neuroworm.seedScaled");
 
     static double[] load(Path f) throws IOException {
         return Arrays.stream(Files.readString(f).trim().split(",")).mapToDouble(Double::parseDouble).toArray();
@@ -64,14 +65,18 @@ public final class IndependentRuns {
             if (Files.exists(f)) {
                 g = load(f);
             } else {
-                g = EfficiencyEvolution.evolve(off, k, false, GENERATIONS);
+                g = EfficiencyEvolution.evolve(off, k,
+                        SEED_SCALED ? EfficiencyEvolution.scaleToPhysical(EfficiencyEvolution.EVOLVED) : null,
+                        GENERATIONS);
                 save(f, g);
             }
             names.add("run" + k);
             genomes.add(g);
         }
-        names.add("EVOLVED");
-        genomes.add(EfficiencyEvolution.EVOLVED);
+        if (Boolean.parseBoolean(System.getProperty("neuroworm.includeLegacy", "true"))) {
+            names.add("EVOLVED");
+            genomes.add(EfficiencyEvolution.EVOLVED);
+        }
 
         List<Integer> ok = new ArrayList<>();
         for (int i = 0; i < genomes.size(); i++) {
@@ -92,6 +97,7 @@ public final class IndependentRuns {
             System.out.printf("%-12s%s | at bound %d/%d%n", GENE_NAMES[j], sb, bound, ok.size());
         }
 
+        if (Boolean.getBoolean("neuroworm.skipAblation")) return;
         Network ref = Evolution.newNetwork();
         Map<String, List<String>> classes = new TreeMap<>();
         for (Neuron n : ref.neurons()) {

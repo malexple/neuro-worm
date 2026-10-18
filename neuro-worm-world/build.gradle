@@ -141,4 +141,53 @@ tasks.register('runPirouetteToggle', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runScaleCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.IndependentRuns'
+    systemProperty 'neuroworm.data', '_signed'
+    systemProperty 'neuroworm.genomeDir', 'genomes_scaled'
+    systemProperty 'neuroworm.runs', '2'
+    systemProperty 'neuroworm.generations', '8'
+    systemProperty 'neuroworm.pop', '24'
+    systemProperty 'neuroworm.seeds', '4'
+    systemProperty 'neuroworm.freezePirouette', 'true'
+    systemProperty 'neuroworm.seedScaled', 'true'
+    systemProperty 'neuroworm.includeLegacy', 'false'
+    systemProperty 'neuroworm.skipAblation', 'true'
+}
+
+tasks.register('runScaledRuns', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.IndependentRuns'
+    systemProperty 'neuroworm.data', '_signed'
+    systemProperty 'neuroworm.genomeDir', 'genomes_scaled_full'
+    systemProperty 'neuroworm.runs', '3'
+    systemProperty 'neuroworm.generations', '15'
+    systemProperty 'neuroworm.pop', '24'
+    systemProperty 'neuroworm.seeds', '4'
+    systemProperty 'neuroworm.sigma', '0.06'
+    systemProperty 'neuroworm.ablationSeeds', '6'
+    systemProperty 'neuroworm.freezePirouette', 'true'
+    systemProperty 'neuroworm.seedScaled', 'false'
+    systemProperty 'neuroworm.includeLegacy', 'false'
+}
+
+tasks.register('runPainPathProbe', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainPathProbe'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runPainReflexCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainReflexCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runPainSignalLevel', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainSignalLevel'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

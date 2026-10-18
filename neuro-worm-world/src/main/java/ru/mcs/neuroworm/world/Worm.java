@@ -56,6 +56,7 @@ public final class Worm {
     private double rotation, pathLength;
     private final int[] cmdBack, cmdFwd;
     private double triggerHz;
+    private int pirouettes;
 
     public Worm(Arena arena, Network net, double x, double y, double heading) {
         this.arena = arena;
@@ -105,14 +106,14 @@ public final class Worm {
     public void update(int ticks) {
         steps++;
         double f = poolHz(fwd, ticks), b = poolHz(back, ticks), d = poolHz(dor, ticks), v = poolHz(ven, ticks);
+        double cb = cmdBack.length > 0 ? poolHz(cmdBack, ticks) : 0;
+        double cf = cmdFwd.length > 0 ? poolHz(cmdFwd, ticks) : 0;
         for (Neuron n : net.neurons()) lastCounts[n.index] = n.spikeCount();
         fwdHz += cfg.emaAlpha * (f - fwdHz);
         backHz += cfg.emaAlpha * (b - backHz);
         dorHz += cfg.emaAlpha * (d - dorHz);
         venHz += cfg.emaAlpha * (v - venHz);
-        if (cmdBack.length > 0 && cmdFwd.length > 0) {
-            triggerHz += cfg.triggerAlpha * (poolHz(cmdBack, ticks) - poolHz(cmdFwd, ticks) - triggerHz);
-        }
+        triggerHz += cfg.triggerAlpha * (cb - cf - triggerHz);
         drive(fwdHz, backHz, dorHz, venHz);
         sense(ticks / 1000.0);
     }
@@ -207,4 +208,6 @@ public final class Worm {
         Pattern p = Pattern.compile(regex);
         return net.neurons().stream().filter(n -> p.matcher(n.name).matches()).mapToInt(n -> n.index).toArray();
     }
+
+    public int pirouetteCount() { return pirouettes; }
 }
