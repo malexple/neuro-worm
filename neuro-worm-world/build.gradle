@@ -214,4 +214,10 @@ tasks.register('runPainCircuitFit', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runPainCommandSpeedCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.PainCommandSpeedCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

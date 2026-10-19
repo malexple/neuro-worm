@@ -32,6 +32,9 @@ public final class Worm {
         public double turnDeadband = 0;   // Гц
         public boolean commandTrigger = false; // триггер пируэта по (AVA,AVD) минус AVB, а не по моторным пулам
         public double triggerAlpha = 0.05;
+        public boolean commandSpeed = false;  // скорость по командным интернейронам (реверс при боли)
+        public double cmdRest = 2.0;          // уровень (AVA+AVD)/2 - AVB в покое, Гц
+        public double cmdScale = 8.0;         // масштаб k, Гц
     }
 
     private static final int RUN = 0, REVERSE = 1, TURN = 2;
@@ -143,7 +146,9 @@ public final class Worm {
             default -> {
                 double excess = Math.max(0, Math.abs(diff) - cfg.turnDeadband) * Math.signum(diff);
                 dh = cfg.turnGain * excess;
-                speed = cfg.baseSpeed + cfg.speedGain * (fwdHz - backHz);
+                speed = cfg.commandSpeed
+                        ? cfg.baseSpeed * Math.max(-1, Math.min(1, 1 - (triggerHz - cfg.cmdRest) / cfg.cmdScale))
+                        : cfg.baseSpeed + cfg.speedGain * (fwdHz - backHz);
                 if (cfg.pirouetteThreshold > 0) {
                     if (cooldown > 0) {
                         cooldown--;
