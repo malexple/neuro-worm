@@ -31,9 +31,11 @@ import ru.mcs.neuroworm.world.*;
 public final class ViewerApp extends Application {
     private static final double ARENA = 200, SCALE = 3.0;
     private static final int COLS = 20, CELL = 16;
-    private static final boolean SALT = "salt".equals(System.getProperty("scene", "chemotaxis"));
+    private static final String SCENE = System.getProperty("scene", "chemotaxis");
+    private static final boolean SALT = "salt".equals(SCENE);
+    private static final boolean MEAL = "meal".equals(SCENE);
 
-    private record Frame(double x, double y, double heading, int tick, double distance, String info) { }
+    private record Frame(double x, double y, double heading, int tick, double distance, String info, boolean eating) { }
 
     private final ConcurrentLinkedQueue<Integer> spikes = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<double[]> path = new ConcurrentLinkedQueue<>();
@@ -63,8 +65,15 @@ public final class ViewerApp extends Application {
     }
 
     private Scenario newScenario() {
-        Scenario s = SALT ? SaltScenario.create(offsets, seed++)
-                : new ChemotaxisScenario(offsets, seed++, java.util.Set.of(), EfficiencyEvolution.EVOLVED);
+        Scenario s;
+        if (SALT) {
+            s = SaltScenario.create(offsets, seed++);
+        } else {
+            ChemotaxisScenario cs = new ChemotaxisScenario(offsets, seed++, java.util.Set.of(),
+                    EfficiencyEvolution.EVOLVED);
+            if (MEAL) MealCycle.apply(cs.worm);
+            s = cs;
+        }
         s.sim().setSpikeListener((t, i) -> {
             if (!training) spikes.add(i);
         });
@@ -107,7 +116,7 @@ public final class ViewerApp extends Application {
             Worm w = s.worm();
             path.add(new double[] {w.x, w.y});
             if (counter++ % 50 == 0) info = s.info();
-            frame.set(new Frame(w.x, w.y, w.heading, s.sim().tick(), s.distanceToTarget(), info));
+            frame.set(new Frame(w.x, w.y, w.heading, s.sim().tick(), s.distanceToTarget(), info, w.feeding()));
             next += (long) (1e9 / (100.0 * speedFactor));
             long wait = next - System.nanoTime();
             if (wait > 0) LockSupport.parkNanos(wait);
@@ -244,7 +253,7 @@ public final class ViewerApp extends Application {
         root.setRight(gridCanvas);
         root.setBottom(new VBox(6, controls, searchRow));
         stage.setScene(new Scene(root));
-        stage.setTitle(SALT ? "neuro-worm: salt conditioning" : "neuro-worm");
+        stage.setTitle(SALT ? "neuro-worm: salt conditioning" : MEAL ? "neuro-worm: meal cycle" : "neuro-worm");
         stage.show();
 
         GraphicsContext ag = arenaCanvas.getGraphicsContext2D();
@@ -295,7 +304,7 @@ public final class ViewerApp extends Application {
         }
         Frame f = frame.get();
         if (f != null) {
-            g.setFill(Color.WHITE);
+            g.setFill(f.eating() ? Color.ORANGE : Color.WHITE);
             g.fillOval((f.x() - 2) * SCALE, (f.y() - 2) * SCALE, 4 * SCALE, 4 * SCALE);
             g.setStroke(Color.RED);
             g.setLineWidth(2);

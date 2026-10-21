@@ -69,6 +69,12 @@ public final class ChemotaxisScenario implements Scenario {
     }
 
     public double distanceToFood() { return arena.distance(worm.x, worm.y, FOOD_X, FOOD_Y); }
+    @Override
+    public String info() {
+        if (worm.cfg.hungerRise <= 0 && worm.cfg.hungerFall <= 0) return "";
+        return String.format("hunger %.2f | meals %d%s", worm.hunger, worm.meals(),
+                worm.feeding() ? " | EATING" : "");
+    }
 
     @Override public Arena arena() { return arena; }
     @Override public Network net() { return net; }
