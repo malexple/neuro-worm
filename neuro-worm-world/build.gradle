@@ -253,4 +253,10 @@ tasks.register('runHungerCheck', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runMealCycleCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.MealCycleCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

@@ -38,6 +38,11 @@ public final class Worm {
         public double serotoninSlowing = 0;   // замедление на единицу уровня серотонина
         public double dopamineSlowing = 0;
         public double hungerGain = 0;   // усиление запахового входа при голоде: 1 + hungerGain * hunger
+        public double hungerFloor = 1;       // чувствительность к запаху при h = 0 (1 = как раньше)
+        public double hungerRise = 0;        // рост голода за шаг, пока червь не ест (0 = динамика выключена)
+        public double hungerFall = 0;        // падение голода за шаг во время еды
+        public double satiatedLevel = 0.05;  // при этом голоде червь перестаёт есть
+        public double eatThreshold = 0;      // минимальный голод, при котором червь начинает есть
     }
 
     private static final int RUN = 0, REVERSE = 1, TURN = 2;
@@ -50,6 +55,8 @@ public final class Worm {
     public double painOverride = Double.NaN;
     /** 0 = сыт, 1 = голоден; задаётся снаружи. */
     public double hunger = 0;
+    private int meals;
+    public int meals() { return meals; }
 
     private final Arena arena;
     private final Network net;
@@ -130,6 +137,7 @@ public final class Worm {
     }
 
     void drive(double fwdHz, double backHz, double dorHz, double venHz) {
+        if (cfg.hungerRise > 0 || cfg.hungerFall > 0) updateHunger();
         if (feeding) return;
         double diff = dorHz - venHz;
         double dh = 0, speed;
@@ -172,9 +180,10 @@ public final class Worm {
         pathLength += Math.abs(speed);
         x = arena.wrap(x + speed * Math.cos(heading));
         y = arena.wrap(y + speed * Math.sin(heading));
-        if (cfg.feedRadius > 0 && arena.foodDistance(x, y) <= cfg.feedRadius) {
+        if (cfg.feedRadius > 0 && arena.foodDistance(x, y) <= cfg.feedRadius && hunger >= cfg.eatThreshold) {
             feeding = true;
-            contactStep = steps;
+            meals++;
+            if (contactStep < 0) contactStep = steps;
         }
     }
 
@@ -191,7 +200,8 @@ public final class Worm {
         dcBase += 0.001 * (0.5 * (dcL + dcR) - dcBase);
         prevL = left;
         prevR = right;
-        double k = 1 + cfg.hungerGain * Math.max(0, Math.min(1, hunger));
+        double h = Math.max(0, Math.min(1, hunger));
+        double k = cfg.hungerFloor + (1 + cfg.hungerGain - cfg.hungerFloor) * h;
         awaL.stimulusHz = k * (cfg.odorGainHz * left + cfg.awaDerivGain * Math.max(0, dcL));
         awaR.stimulusHz = k * (cfg.odorGainHz * right + cfg.awaDerivGain * Math.max(0, dcR));
         awcL.stimulusHz = cfg.awcTonicHz + k * cfg.awcOffGain * Math.max(0, -dcL);
@@ -230,5 +240,14 @@ public final class Worm {
     public void setModulators(double serotonin, double dopamine) {
         this.serotonin = serotonin;
         this.dopamine = dopamine;
+    }
+
+    private void updateHunger() {
+        if (feeding) {
+            hunger = Math.max(0, hunger - cfg.hungerFall);
+            if (hunger <= cfg.satiatedLevel) feeding = false;
+        } else {
+            hunger = Math.min(1, hunger + cfg.hungerRise);
+        }
     }
 }
