@@ -1,5 +1,6 @@
 package ru.mcs.neuroworm.world;
 
+import ru.mcs.neuroworm.core.Modulator;
 import ru.mcs.neuroworm.core.Simulator;
 
 /** Мультитемповая связка: ядро 1 мс, мир 10 мс. */
@@ -18,6 +19,7 @@ public final class World {
 
     public void step() {
         sim.run(TICKS_PER_STEP);
+        worm.setModulators(sim.modulator(Modulator.SEROTONIN), sim.modulator(Modulator.DOPAMINE));
         worm.update(TICKS_PER_STEP);
     }
 }

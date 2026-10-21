@@ -235,4 +235,22 @@ tasks.register('runMediatorSensitivity', JavaExec) {
     systemProperty 'neuroworm.data', '_signed'
 }
 
+tasks.register('runModulatorCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.ModulatorCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runModulatorSpeedCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.ModulatorSpeedCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+tasks.register('runHungerCheck', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.HungerCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
 application { mainClass = 'ru.mcs.neuroworm.world.Evolution' }

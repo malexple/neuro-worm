@@ -35,6 +35,9 @@ public final class Worm {
         public boolean commandSpeed = false;  // скорость по командным интернейронам (реверс при боли)
         public double cmdRest = 2.0;          // уровень (AVA+AVD)/2 - AVB в покое, Гц
         public double cmdScale = 8.0;         // масштаб k, Гц
+        public double serotoninSlowing = 0;   // замедление на единицу уровня серотонина
+        public double dopamineSlowing = 0;
+        public double hungerGain = 0;   // усиление запахового входа при голоде: 1 + hungerGain * hunger
     }
 
     private static final int RUN = 0, REVERSE = 1, TURN = 2;
@@ -45,6 +48,8 @@ public final class Worm {
     public double csOverride = Double.NaN;
     /** NaN: боль от арены; число: подать постоянный стимул ASH в Гц (обучение). */
     public double painOverride = Double.NaN;
+    /** 0 = сыт, 1 = голоден; задаётся снаружи. */
+    public double hunger = 0;
 
     private final Arena arena;
     private final Network net;
@@ -62,6 +67,7 @@ public final class Worm {
     private final int[] cmdBack, cmdFwd;
     private double triggerHz;
     private int pirouettes;
+    private double serotonin, dopamine;
 
     public Worm(Arena arena, Network net, double x, double y, double heading) {
         this.arena = arena;
@@ -149,10 +155,12 @@ public final class Worm {
                 speed = cfg.commandSpeed
                         ? cfg.baseSpeed * Math.max(-1, Math.min(1, 1 - (triggerHz - cfg.cmdRest) / cfg.cmdScale))
                         : cfg.baseSpeed + cfg.speedGain * (fwdHz - backHz);
+                speed /= 1 + cfg.serotoninSlowing * serotonin + cfg.dopamineSlowing * dopamine;
                 if (cfg.pirouetteThreshold > 0) {
                     if (cooldown > 0) {
                         cooldown--;
-                    } else if ((cfg.commandTrigger ? triggerHz : backHz - fwdHz) > cfg.pirouetteThreshold) {    phase = REVERSE;
+                    } else if ((cfg.commandTrigger ? triggerHz : backHz - fwdHz) > cfg.pirouetteThreshold) {
+                        phase = REVERSE;
                         phaseLeft = Math.max(1, cfg.reverseSteps);
                         turnDir = diff >= 0 ? 1 : -1;
                     }
@@ -183,10 +191,11 @@ public final class Worm {
         dcBase += 0.001 * (0.5 * (dcL + dcR) - dcBase);
         prevL = left;
         prevR = right;
-        awaL.stimulusHz = cfg.odorGainHz * left + cfg.awaDerivGain * Math.max(0, dcL);
-        awaR.stimulusHz = cfg.odorGainHz * right + cfg.awaDerivGain * Math.max(0, dcR);
-        awcL.stimulusHz = cfg.awcTonicHz + cfg.awcOffGain * Math.max(0, -dcL);
-        awcR.stimulusHz = cfg.awcTonicHz + cfg.awcOffGain * Math.max(0, -dcR);
+        double k = 1 + cfg.hungerGain * Math.max(0, Math.min(1, hunger));
+        awaL.stimulusHz = k * (cfg.odorGainHz * left + cfg.awaDerivGain * Math.max(0, dcL));
+        awaR.stimulusHz = k * (cfg.odorGainHz * right + cfg.awaDerivGain * Math.max(0, dcR));
+        awcL.stimulusHz = cfg.awcTonicHz + k * cfg.awcOffGain * Math.max(0, -dcL);
+        awcR.stimulusHz = cfg.awcTonicHz + k * cfg.awcOffGain * Math.max(0, -dcR);
 
         if (aseL != null) {
             boolean cs = !Double.isNaN(csOverride);
@@ -217,4 +226,9 @@ public final class Worm {
     }
 
     public int pirouetteCount() { return pirouettes; }
+
+    public void setModulators(double serotonin, double dopamine) {
+        this.serotonin = serotonin;
+        this.dopamine = dopamine;
+    }
 }
