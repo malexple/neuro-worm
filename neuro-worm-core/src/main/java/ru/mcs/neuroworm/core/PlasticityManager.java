@@ -1,11 +1,15 @@
 package ru.mcs.neuroworm.core;
 
 import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
  * Трёхфакторная пластичность (R-STDP) на синапсах между двумя группами нейронов.
  * Меняет только Synapse.scale. Знак награды задаёт внешний код через поле reward.
+ * Набор обучаемых связей выбирается либо по группе из колонки Is_Plastic (forGroup),
+ * либо по regex имён нейронов (устаревший способ).
  */
 public final class PlasticityManager {
     public double eta = 1e-3;
@@ -21,18 +25,52 @@ public final class PlasticityManager {
     public double stressGain = 0;
 
     private boolean learning = true;
+    private final String group;
     private final Neuron[] pre, post;
     private final Synapse[][] syn;
     private final double[] xPre, xPost;
     private final double[][] elig;
 
+    /** Устаревший способ: выбор по regex. Предпочтительно forGroup. */
     public PlasticityManager(Network net, String preRegex, String postRegex) {
-        Pattern a = Pattern.compile(preRegex), b = Pattern.compile(postRegex);
-        pre = net.neurons().stream().filter(n -> a.matcher(n.name).matches()).toArray(Neuron[]::new);
-        post = net.neurons().stream().filter(n -> b.matcher(n.name).matches()).toArray(Neuron[]::new);
+        this(net, select(net, preRegex), select(net, postRegex), null);
+    }
+
+    /** Обучаемые связи берутся из колонки Is_Plastic коннектома (метка группы). */
+    public static PlasticityManager forGroup(Network net, String group) {
+        Set<Integer> pre = new TreeSet<>();
+        Set<Integer> post = new TreeSet<>();
+        for (Neuron n : net.neurons()) {
+            for (Synapse s : n.synapses()) {
+                if (s.inPlasticGroup(group)) {
+                    pre.add(n.index);
+                    post.add(s.target());
+                }
+            }
+        }
+        if (pre.isEmpty()) {
+            throw new IllegalStateException("No synapses with Is_Plastic group '" + group + "'");
+        }
+        return new PlasticityManager(net, byIndex(net, pre), byIndex(net, post), group);
+    }
+
+    private static Neuron[] select(Network net, String regex) {
+        Pattern p = Pattern.compile(regex);
+        return net.neurons().stream().filter(n -> p.matcher(n.name).matches()).toArray(Neuron[]::new);
+    }
+
+    private static Neuron[] byIndex(Network net, Set<Integer> indices) {
+        return indices.stream().map(net::get).toArray(Neuron[]::new);
+    }
+
+    private PlasticityManager(Network net, Neuron[] pre, Neuron[] post, String group) {
+        this.pre = pre;
+        this.post = post;
+        this.group = group;
         syn = new Synapse[post.length][pre.length];
         for (int p = 0; p < pre.length; p++) {
             for (Synapse s : pre[p].synapses()) {
+                if (group != null && !s.inPlasticGroup(group)) continue;
                 for (int q = 0; q < post.length; q++) {
                     if (s.target() == post[q].index && syn[q][p] == null) syn[q][p] = s;
                 }

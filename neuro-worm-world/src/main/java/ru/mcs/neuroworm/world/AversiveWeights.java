@@ -10,7 +10,7 @@ public final class AversiveWeights {
     public static void main(String[] args) {
         Logger.getLogger(ConnectomeLoader.class.getName()).setLevel(Level.SEVERE);
         double[] off = Evolution.settle();
-        PlasticityManager names = new PlasticityManager(Evolution.newNetwork(), ConditioningEvolution.ASE, Evolution.INTER);
+        PlasticityManager names = PlasticityManager.forGroup(Evolution.newNetwork(), Evolution.GROUP_SALT);
         String[] pre = names.preNames(), post = names.postNames();
         for (AversiveConditioning.Mode mode : new AversiveConditioning.Mode[] {
                 AversiveConditioning.Mode.PAIRED, AversiveConditioning.Mode.UNPAIRED,

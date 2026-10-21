@@ -45,7 +45,7 @@ public final class AversiveConditioning {
                 if (su.sensitivity() > 0 && ase.matcher(n.name).matches()) n.stressSensitivity = su.sensitivity();
             }
         }
-        PlasticityManager pm = new PlasticityManager(net, ConditioningEvolution.ASE, Evolution.INTER);
+        PlasticityManager pm = PlasticityManager.forGroup(net, Evolution.GROUP_SALT);
         pm.eta = COND.eta();
         pm.tauElig = COND.tauElig();
         pm.aMinus = COND.aMinus();

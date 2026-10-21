@@ -42,7 +42,7 @@ public final class ConditioningEvolution {
         Evolution.scale(net, Evolution.INTER, Evolution.HEAD, g[8]);
         Evolution.scale(net, ASE, Evolution.INTER, cd.sAse());
 
-        PlasticityManager pm = new PlasticityManager(net, ASE, Evolution.INTER);
+        PlasticityManager pm = PlasticityManager.forGroup(net, Evolution.GROUP_SALT);
         pm.eta = cd.eta();
         pm.tauElig = cd.tauElig();
         pm.aMinus = cd.aMinus();

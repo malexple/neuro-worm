@@ -12,11 +12,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
-import ru.mcs.neuroworm.core.ConnectomeLoader;
-import ru.mcs.neuroworm.core.Network;
-import ru.mcs.neuroworm.core.Neuron;
-import ru.mcs.neuroworm.core.Simulator;
-import ru.mcs.neuroworm.core.Synapse;
+
+import ru.mcs.neuroworm.core.*;
 
 /** Эволюция 9 параметров. Фитнес парный: d(с запахом) - d(слепой) на одних и тех же seed. */
 public final class Evolution {
@@ -30,6 +27,7 @@ public final class Evolution {
     static final String HEAD = "^(SMD[DV]|RMD[DV]?|RIM|RIA|RIB|AIB)[LR]$";
     static final double[] FOOD = {140, 100};
     static String DATA = System.getProperty("neuroworm.data", "");
+    static final String GROUP_OLFACTORY = "olfactory", GROUP_SALT = "salt";
 
     static double[] decode(double[] x) {
         double[] g = new double[GENES];
@@ -38,11 +36,17 @@ public final class Evolution {
     }
 
     static Network newNetwork() {
+        String noneRegex = System.getProperty("neuroworm.noneFor", "");
+        Neurotransmitter dflt = Neurotransmitter.valueOf(
+                System.getProperty("neuroworm.unknownMediator", "GLU").toUpperCase());
+        Pattern none = noneRegex.isEmpty() ? null : Pattern.compile(noneRegex);
         try (InputStream c = Evolution.class.getResourceAsStream("/connectome" + DATA + ".csv");
              InputStream t = Evolution.class.getResourceAsStream("/neuron_types" + DATA + ".csv")) {
             Network net = ConnectomeLoader.load(
-                    new InputStreamReader(t, StandardCharsets.UTF_8),
-                    new InputStreamReader(c, StandardCharsets.UTF_8), K_CHEM, K_GAP).network();
+                            new InputStreamReader(t, StandardCharsets.UTF_8),
+                            new InputStreamReader(c, StandardCharsets.UTF_8), K_CHEM, K_GAP,
+                            name -> none != null && none.matcher(name).matches() ? Neurotransmitter.NONE : dflt)
+                    .network();
             for (Neuron n : net.neurons()) n.baselineHz = 1;
             return net;
         } catch (IOException e) {

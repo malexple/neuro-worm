@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,11 +15,15 @@ import java.util.TreeSet;
 
 /**
  * neuron_types.csv: Neuron,Neurotransmitter[,Class]
- * connectome.csv:   Source,Target,Type,Weight   (Type: S = chemical, G = gap junction)
+ * connectome.csv:   Source,Target,Type,Weight[,Sign[,Is_Plastic]]
+ * Type: S = chemical, G = gap junction. Sign: -1, 0, 1 (пусто = по медиатору).
+ * Is_Plastic: метка группы обучаемых связей (например salt, olfactory); пусто или 0 = не обучаемая;
+ * несколько групп через «;». Допустима только для химических связей.
  */
 public final class ConnectomeLoader {
 
-    public record Report(int neurons, int chemical, int gap, int signOverrides, List<String> inferred) { }
+    public record Report(int neurons, int chemical, int gap, int signOverrides, List<String> inferred,
+                         int plastic) { }
 
     public record LoadResult(Network network, Report report) { }
 
@@ -32,6 +37,17 @@ public final class ConnectomeLoader {
     private ConnectomeLoader() { }
 
     public static LoadResult load(Reader types, Reader connectome, double chemicalK, double gapK)
+            throws IOException {
+        return load(types, connectome, chemicalK, gapK, name -> Neurotransmitter.GLU);
+    }
+
+    public static LoadResult load(Reader types, Reader connectome, double chemicalK, double gapK,
+                                  Neurotransmitter unknown) throws IOException {
+        return load(types, connectome, chemicalK, gapK, name -> unknown);
+    }
+
+    public static LoadResult load(Reader types, Reader connectome, double chemicalK, double gapK,
+                                  java.util.function.Function<String, Neurotransmitter> unknownFor)
             throws IOException {
         Map<String, Neurotransmitter> transmitters = new HashMap<>();
         Map<String, NeuronType> classes = new HashMap<>();
@@ -53,14 +69,14 @@ public final class ConnectomeLoader {
         for (String name : names) {
             Neurotransmitter t = transmitters.get(name);
             if (t == null) {
-                t = Neurotransmitter.GLU;
+                t = unknownFor.apply(name);
                 inferred.add(name);
             }
             net.addNeuron(name, classes.getOrDefault(name, NeuronType.INTER), t);
         }
         if (!inferred.isEmpty() && WARNED.compareAndSet(false, true)) {
             LOG.log(System.Logger.Level.WARNING,
-                    "Neurotransmitter not defined for {0} neurons, assumed GLU (see Report.inferred)",
+                    "Neurotransmitter not defined for {0} neurons, default assumed (see Report.inferred)",
                     inferred.size());
         }
 
@@ -68,10 +84,12 @@ public final class ConnectomeLoader {
         int gap = 0;
         Set<String> gapSeen = new HashSet<>();
         int overrides = 0;
+        int plastic = 0;
         for (Row e : edges) {
             double w = parseWeight(e);
             Neuron a = net.get(e.f[0]);
             Neuron b = net.get(e.f[1]);
+            Set<String> groups = parseGroups(e);
             switch (e.f[2].toUpperCase(Locale.ROOT)) {
                 case "S" -> {
                     int sign = 0;
@@ -79,10 +97,15 @@ public final class ConnectomeLoader {
                         sign = parseSign(e);
                         if (sign != 0) overrides++;
                     }
-                    net.connect(a, b, chemicalK * w, 1, sign);
+                    if (!groups.isEmpty()) plastic++;
+                    net.connect(a, b, chemicalK * w, 1, sign, groups);
                     chemical++;
                 }
                 case "G" -> {
+                    if (!groups.isEmpty()) {
+                        throw new IllegalArgumentException(
+                                "line " + e.line + ": Is_Plastic is only valid for chemical synapses");
+                    }
                     String key = a.index < b.index ? a.index + "|" + b.index : b.index + "|" + a.index;
                     if (gapSeen.add(key)) {
                         net.connectGap(a, b, gapK * w);
@@ -92,7 +115,12 @@ public final class ConnectomeLoader {
                 default -> throw new IllegalArgumentException("line " + e.line + ": unknown type '" + e.f[2] + "'");
             }
         }
-        return new LoadResult(net, new Report(net.size(), chemical, gap, overrides, List.copyOf(inferred)));
+        return new LoadResult(net, new Report(net.size(), chemical, gap, overrides, List.copyOf(inferred), plastic));
+    }
+
+    private static Set<String> parseGroups(Row r) {
+        if (r.f.length <= 5 || r.f[5].isEmpty() || r.f[5].equals("0")) return Set.of();
+        return Set.copyOf(Arrays.asList(r.f[5].split("\\s*;\\s*")));
     }
 
     private static int parseSign(Row r) {

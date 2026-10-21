@@ -16,9 +16,6 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
-test {
-    useJUnitPlatform()
-}
 
 tasks.register('runPlasticity', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
@@ -217,6 +214,24 @@ tasks.register('runPainCircuitFit', JavaExec) {
 tasks.register('runPainCommandSpeedCheck', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'ru.mcs.neuroworm.world.PainCommandSpeedCheck'
+    systemProperty 'neuroworm.data', '_signed'
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'neuroworm.unknownMediator', System.getProperty('neuroworm.unknownMediator', 'GLU')
+}
+
+tasks.register('runConditioningStatsNoMediator', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.ConditioningStats'
+    systemProperty 'neuroworm.data', '_signed'
+    systemProperty 'neuroworm.unknownMediator', 'NONE'
+}
+
+tasks.register('runMediatorSensitivity', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ru.mcs.neuroworm.world.MediatorSensitivity'
     systemProperty 'neuroworm.data', '_signed'
 }
 

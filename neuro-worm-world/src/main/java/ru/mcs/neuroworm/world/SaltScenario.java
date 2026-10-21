@@ -13,6 +13,9 @@ public final class SaltScenario implements Scenario {
     public static final double SALT_X = 140, SALT_Y = 100;
     private static final double CS_LEVEL = 0.5;
     private static final int CYCLE = 600;
+    private static final double STOP_RADIUS = 5;
+    private boolean arrived;
+    private double holdX, holdY;
 
     /** Правило, найденное эволюцией на сети со знаками Fenyves (строка COND из лога). */
     private static final ConditioningEvolution.Cond COND = new ConditioningEvolution.Cond(
@@ -40,7 +43,7 @@ public final class SaltScenario implements Scenario {
         Evolution.scale(net, Evolution.SENS, Evolution.INTER, g[7]);
         Evolution.scale(net, Evolution.INTER, Evolution.HEAD, g[8]);
         Evolution.scale(net, ConditioningEvolution.ASE, Evolution.INTER, COND.sAse());
-        pm = new PlasticityManager(net, ConditioningEvolution.ASE, Evolution.INTER);
+        pm = PlasticityManager.forGroup(net, Evolution.GROUP_SALT);
         pm.eta = COND.eta();
         pm.tauElig = COND.tauElig();
         pm.aMinus = COND.aMinus();
@@ -64,6 +67,7 @@ public final class SaltScenario implements Scenario {
         worm.cfg.aseOffGain = COND.aseOff();
         worm.cfg.aseTonicHz = COND.aseTonic();
         world = new World(arena, worm, sim);
+        arrived = false;
     }
 
     private void enterTest() {
@@ -72,6 +76,7 @@ public final class SaltScenario implements Scenario {
         pm.setLearning(false);
         pm.reward = 0;
         phase = Phase.TEST;
+        arrived = false;
     }
 
     private void enterTrain() {
@@ -109,6 +114,16 @@ public final class SaltScenario implements Scenario {
             worm.csOverride = Double.NaN;
         }
         world.step();
+        if (phase == Phase.TEST) {
+            if (arrived) {
+                worm.x = holdX;
+                worm.y = holdY;
+            } else if (distanceToTarget() <= STOP_RADIUS) {
+                arrived = true;
+                holdX = worm.x;
+                holdY = worm.y;
+            }
+        }
     }
 
     /** Средний масштаб существующих связей ASE -> интернейроны (старт 10,0). */
@@ -137,6 +152,7 @@ public final class SaltScenario implements Scenario {
 
     @Override
     public String info() {
-        return String.format("%s | ASE scale %.2f", trained ? "TRAINED" : "naive", meanAseScale());
+        return String.format("%s | ASE scale %.2f%s", trained ? "TRAINED" : "naive", meanAseScale(),
+                arrived ? " | ARRIVED" : "");
     }
 }

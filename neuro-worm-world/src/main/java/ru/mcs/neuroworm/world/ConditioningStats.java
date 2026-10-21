@@ -57,7 +57,7 @@ public final class ConditioningStats {
         }
         System.out.printf("PAIRED, reward 0 %.1f +- %.1f (expected ~ naive)%n", mean(z), se(z));
 
-        PlasticityManager pm = new PlasticityManager(Evolution.newNetwork(), ConditioningEvolution.ASE, Evolution.INTER);
+        PlasticityManager pm = PlasticityManager.forGroup(Evolution.newNetwork(), Evolution.GROUP_SALT);
         String[] pre = pm.preNames(), post = pm.postNames();
         System.out.println("changed ASE synapses after paired training (initial scale " + cd.sAse() + "):");
         for (int q = 0; q < post.length; q++) {

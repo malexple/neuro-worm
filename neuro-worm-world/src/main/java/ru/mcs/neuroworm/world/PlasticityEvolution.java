@@ -46,7 +46,7 @@ public final class PlasticityEvolution {
 
         PlasticityManager pm = null;
         if (rule != null) {
-            pm = new PlasticityManager(net, Evolution.SENS, Evolution.INTER);
+            pm = PlasticityManager.forGroup(net, Evolution.GROUP_OLFACTORY);
             pm.eta = rule.eta();
             pm.tauElig = rule.tauElig();
             pm.aMinus = rule.aMinus();

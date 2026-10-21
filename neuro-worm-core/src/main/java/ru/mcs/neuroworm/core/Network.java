@@ -42,4 +42,10 @@ public final class Network {
     public Neuron get(String name) { return byName.get(name); }
     public int size() { return neurons.size(); }
     public List<Neuron> neurons() { return Collections.unmodifiableList(neurons); }
+
+    public void connect(Neuron pre, Neuron post, double weight, int delay, int sign, java.util.Set<String> groups) {
+        if (weight < 0) throw new IllegalArgumentException("Weight must be >= 0; sign comes from transmitter");
+        if (delay < 1 || delay > MAX_DELAY) throw new IllegalArgumentException("Delay must be in 1.." + MAX_DELAY);
+        pre.out.add(new Synapse(post.index, weight, delay, sign, groups));
+    }
 }
